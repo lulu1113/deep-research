@@ -6,7 +6,7 @@
 
 **非 OpenCode 独占。** Claude Code、Codex CLI、Cursor、Windsurf、Cline、Aider、Continue.dev 等主流 AI 编码工具读取本项目后稍作改造即可使用。
 
-多 agent 编排（OpenCode 的 `task()`）思路通用，各平台有自己的等价机制，照猫画虎就行。Scrapling 和 Exa 搜索都是标准 Python/HTTP 工具，不绑定平台。
+多 agent 编排（OpenCode 的 `task()`）思路通用，各平台有自己的等价机制，照猫画虎就行。Scrapling（Python 抓取库）和搜索 API 都是标准 Python/HTTP 工具，不绑定平台。Scrapling 是保证抓取效率和质量的核心依赖，推荐必装。
 
 本 skill 的核心价值在于实现思路，而非适配某个特定工具。
 
@@ -122,7 +122,15 @@ Scrapling 批量抓取（获取全文，不被 WAF/Cloudflare 拦住）
 
 AI 会读取项目文档→识别依赖链→逐项安装→验证可用性。不需要手动执行任何命令。
 
-### ⚡ 方式二：一键脚本安装
+### ⚡ 方式二：一键脚本安装（仅 OpenCode）
+
+### 🔧 方式三：非 OpenCode 用户（Claude Code / Codex CLI / Cursor 等）
+
+把这段提示词粘贴到你的 AI 编码工具中：
+
+> 请调研 https://github.com/hoolulu/deep-research 项目，根据文档自动安装前置依赖，适配我的 CLI 工具。需要安装：Python 3 + Scrapling（`pip install scrapling`），然后根据工具自身机制注册 `/research` 等价命令。核心是理解多 agent 编排管道设计思路，把 Task 链式架构翻译成当前工具的等价实现。
+
+不同工具的适配点：多 agent 编排需映射到各自的原生机制（Claude Code 的 sub-agent、Codex CLI 的多文件任务、Cursor 的 agent 模式等），搜索和抓取逻辑（python-scrapling + 搜索 API）可原样复用。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hoolulu/deep-research/main/install.sh | bash
@@ -130,7 +138,7 @@ curl -fsSL https://raw.githubusercontent.com/hoolulu/deep-research/main/install.
 
 > 发送后 OpenCode 的 AI agent 会自动在终端执行安装，你不需要手动打开命令行。
 
-安装脚本会：检测 OpenCode 目录 → 放置 skill → 自动安装 OMO / Python / Scrapling → 检查 MCP → 注册 `/research` 命令。
+安装脚本会：检测 OpenCode 目录 → 放置 skill → 自动安装 OMO / Python / Scrapling（必装） → 检查 MCP → 注册 `/research` 命令。
 
 ### 还没有 OpenCode？
 

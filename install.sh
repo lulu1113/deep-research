@@ -116,7 +116,7 @@ main() {
     log "确保前置依赖..."
     ensure_omo || true
     ensure_python || true
-    ensure_scrapling || true
+    ensure_scrapling  # Scrapling 是必装，抓取效率依赖它
 
     local oc_config=""
     for cfg in "$HOME/.opencode/opencode.json" "$HOME/.opencode/opencode.jsonc" \
