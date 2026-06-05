@@ -1,7 +1,7 @@
 ---
 name: deep-research
 description: "专业深度调研报告生成 — Task 链式架构：主 agent 只调度，3 个独立 Task 串行执行，中间数据通过临时文件传递，不进主会话上下文。"
-version: 1.0.0
+version: 1.0.1
 updated: 2026-06-06
 risk: medium
 ---

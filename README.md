@@ -2,9 +2,9 @@
 
 **OpenCode 深度调研报告生成 Skill。**
 
-> **当前版本：** `1.0.0` · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
+> **当前版本：** `1.0.1` · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
 
-**一条命令，六分钟，一份对标券商标准的深度调研报告。**
+**一个命令，六分钟，一份深度专业的调研报告。**
 
 ---
 
