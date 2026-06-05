@@ -94,6 +94,24 @@ ensure_omo() {
     fi
 }
 
+check_version() {
+    local target="$1"
+    local ver_file="$target/VERSION"
+    if [ -f "$ver_file" ]; then
+        local local_ver
+        local_ver=$(cat "$ver_file")
+        local remote_ver
+        remote_ver=$(curl -sSf --max-time 5 "https://raw.githubusercontent.com/hoolulu/deep-research/main/VERSION" 2>/dev/null || echo "")
+        if [ -n "$remote_ver" ] && [ "$local_ver" != "$remote_ver" ]; then
+            warn "本地版本 $local_ver，远程版本 $remote_ver"
+            log "执行 git pull 更新..."
+            (cd "$target" && git pull) && ok "已更新到 $remote_ver" || warn "更新失败，请手动检查"
+        else
+            ok "版本最新: $local_ver"
+        fi
+    fi
+}
+
 main() {
     log "检测 OpenCode 环境..."
     local skills_dir
@@ -112,6 +130,7 @@ main() {
     ok "OpenCode 技能目录: $skills_dir"
 
     install_skill "$skills_dir/$SKILL_NAME"
+    check_version "$skills_dir/$SKILL_NAME"
 
     log "确保前置依赖..."
     ensure_omo || true
@@ -131,8 +150,7 @@ main() {
         check_mcp "scrapling" "$oc_config" || warn "Scrapling MCP 未配置（会使用 Python scrapling 直连）"
     fi
 
-    log "注册 /research 命令..."
-    local cmd_src="$skills_dir/$SKILL_NAME/command/research.md"
+    log "注册命令..."
     local cmd_dirs=("$HOME/.config/opencode/command" "$HOME/.opencode/command")
     if [ -n "${XDG_DATA_HOME:-}" ]; then
         cmd_dirs+=("$XDG_DATA_HOME/opencode/command")
@@ -142,14 +160,18 @@ main() {
         eval cmd_dir="$cmd_dir"
         if [ -d "$(dirname "$cmd_dir")" ] || [ -d "$cmd_dir" ]; then
             mkdir -p "$cmd_dir"
-            cp "$cmd_src" "$cmd_dir/research.md"
-            ok "/research 命令已注册到 $cmd_dir/research.md"
+            cp "$skills_dir/$SKILL_NAME/command/research.md" "$cmd_dir/research.md"
+            ok "/research 命令已注册"
+            if [ -f "$skills_dir/$SKILL_NAME/command/update.md" ]; then
+                cp "$skills_dir/$SKILL_NAME/command/update.md" "$cmd_dir/research-update.md"
+                ok "/research-update 命令已注册"
+            fi
             installed_cmd=true
             break
         fi
     done
     if [ "$installed_cmd" = false ]; then
-        warn "未找到 OpenCode 配置目录，手动复制 command/research.md 到 .opencode/command/ 下"
+        warn "未找到 OpenCode 配置目录，手动复制 command/ 下的文件到 .opencode/command/"
     fi
 
     echo ""

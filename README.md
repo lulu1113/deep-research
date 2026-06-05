@@ -2,17 +2,12 @@
 
 **OpenCode 深度调研报告生成 Skill。**
 
-**一个命令，六分钟，一份深度专业的调研报告。**
+> **当前版本：** `1.0.0` · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
+> **一条命令，六分钟，一份对标券商标准的深度调研报告。**
 
-**非 OpenCode 独占。** Claude Code、Codex CLI、Cursor、Windsurf、Cline、Aider、Continue.dev 等主流 AI 编码工具读取本项目后稍作改造即可使用。
+---
 
-多 agent 编排（OpenCode 的 `task()`）思路通用，各平台有自己的等价机制，照猫画虎就行。Scrapling（Python 抓取库）和搜索 API 都是标准 Python/HTTP 工具，不绑定平台。Scrapling 是保证抓取效率和质量的核心依赖，推荐必装。
-
-本 skill 的核心价值在于实现思路，而非适配某个特定工具。
-
-如果你用不同的 CLI 工具，你可以定义任何搜索工具，或者在 Rules.md 和 Types.md 中修改对特定行业的需求。
-
-注意，适配调研任何主题，不光是能做行业研报哦！看我出的案例报告就知道啦。
+**非 OpenCode 独占，但更新只对 OpenCode 用户无缝同步。** 其他平台（Claude Code、Codex CLI、Cursor 等）读者，请将本项目视为**架构参考快照**——后续改进需要自行 cherry-pick。详见[更新策略](#-更新)。
 
 ---
 
@@ -119,7 +114,7 @@ Scrapling 批量抓取（获取全文，不被 WAF/Cloudflare 拦住）
 把下面这段提示词复制到 OpenCode 聊天框发送，AI 会自动完成一切：
 
 ```text
-请调研 https://github.com/hoolulu/deep-research 项目，根据 SKILL.md 和 README 的要求，自动安装所有前置依赖（Python、Scrapling、oh-my-openagent），注册 /research 命令，确保此 skill 在 OpenCode 中正常使用。
+请调研 https://github.com/hoolulu/deep-research 项目，根据 SKILL.md 和 README 的要求，自动安装所有前置依赖（Python、Scrapling、oh-my-openagent），注册 /research 和 /research-update 命令，确保此 skill 在 OpenCode 中正常使用。安装完成后读取 VERSION 文件确认版本号。
 ```
 
 AI 会读取项目文档→识别依赖链→逐项安装→验证可用性。不需要手动执行任何命令。
@@ -132,14 +127,16 @@ curl -fsSL https://raw.githubusercontent.com/hoolulu/deep-research/main/install.
 
 > 发送后 OpenCode 的 AI agent 会自动在终端执行安装，你不需要手动打开命令行。
 
-安装脚本会：检测 OpenCode 目录 → 放置 skill → 自动安装 OMO / Python / Scrapling（必装） → 检查 MCP → 注册 `/research` 命令。
+安装脚本会：检测 OpenCode 目录 → 放置 skill → 自动安装 OMO / Python / Scrapling（必装） → 检查 MCP → 注册 `/research` 和 `/research-update` 命令。
 
 ### 🔧 方式三：非 OpenCode 用户（Claude Code / Codex CLI / Cursor 等）
+
+> ⚠️ **参考快照模式**：本项目对非 OpenCode 平台以"架构参考"形式提供。每次你拉取的是某个时间点的代码快照，后续更新（bug 修复、新功能）不会自动同步到你的 fork。如果上游有重要改动，需要手动 cherry-pick。
 
 把这段提示词粘贴到你的 AI 编码工具中：
 
 ```text
-请调研 https://github.com/hoolulu/deep-research 项目，根据文档自动安装前置依赖，适配我的 CLI 工具。需要安装：Python 3 + Scrapling（pip install scrapling），然后根据工具自身机制注册 /research 等价命令。核心是理解多 agent 编排管道设计思路，把 Task 链式架构翻译成当前工具的等价实现。
+请调研 https://github.com/hoolulu/deep-research 项目，根据文档自动安装前置依赖，适配我的 CLI 工具。需要安装：Python 3 + Scrapling（pip install scrapling），然后根据工具自身机制注册 /research 等价命令。核心是理解多 agent 编排管道设计思路，把 Task 链式架构翻译成当前工具的等价实现。安装完成后读取 VERSION 文件确认版本号。
 ```
 
 不同工具的适配点：多 agent 编排需映射到各自的原生机制（Claude Code 的 sub-agent、Codex CLI 的多文件任务、Cursor 的 agent 模式等），搜索和抓取逻辑（python-scrapling + 搜索 API）可原样复用。
@@ -164,6 +161,40 @@ curl -fsSL https://opencode.ai/install | bash
 
 
 > 本 skill 依赖 OH-MY-OPENAGENT 插件提供的 `oracle` 子 agent。如果没有安装，`/research` 命令无法执行。
+
+## 🔄 更新
+
+### OpenCode 用户
+
+安装后，skill 目录自带 git 仓库。更新方式：
+
+**方式一：AI 命令（推荐）**
+
+在 OpenCode 聊天框输入：
+
+```
+/research-update
+```
+
+AI 会自动检查本地和远程版本号，如有更新则执行 `git pull`。
+
+**方式二：手动**
+
+```bash
+cd ~/.opencode/skills/deep-research
+git pull
+```
+
+版本号存储在根目录 `VERSION` 文件中。可通过 `cat ~/.opencode/skills/deep-research/VERSION` 查看当前版本。
+
+### 非 OpenCode 用户
+
+你拿到的是架构参考快照，没有自动更新通道。建议：
+1. 定期访问 [Releases](https://github.com/hoolulu/deep-research/releases) 查看更新
+2. 关注提交历史 `git log` 了解改动
+3. 手动 cherry-pick 需要的修复/改进到你的适配版本中
+
+---
 
 ## 使用方法
 
