@@ -174,10 +174,12 @@ curl -fsSL https://opencode.ai/install | bash
 安装并重启 OpenCode 后，在聊天框输入：
 
 ```
-/research 半导体市场格局       # standard 模式，~6-10 分钟
-/research 半导体市场格局 -quick  # quick 模式，~5-8 分钟
-/research 半导体市场格局 -deep   # deep 模式，~12-18 分钟
+/research 你的主题             # standard 模式，~6-10 分钟
+/research 你的主题 -quick       # quick 模式，~5-8 分钟
+/research 你的主题 -deep        # deep 模式，~12-18 分钟
 ```
+
+检查更新：`/research-update`
 
 ### 发送后会发生什么
 
