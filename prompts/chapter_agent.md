@@ -15,8 +15,8 @@
 ### 格式
 - 纯中文，数字带来源（机构，年份）
 - 每章以 `>` 引用格式的核心判断开头
-- 正文段落 ≤ {max_paragraphs} 段（整章合计），数据表 ≥ 3 张
-- 字数上限 {per_chapter_chars} 字，段落上限 {max_paragraphs} 段。如需确认字数，**只准运行** `python {TOOLSDIR}/dr_tools.py word-count {TMPDIR}/chapters/chapter-{N}.md`，禁止写 inline PowerShell/Python 去算。
+- 正文段落 ≥ {min_paragraphs} 段（整章合计），数据表 ≥ 3 张
+- 字数上限 {per_chapter_chars} 字。如需确认字数，**只准运行** `python {TOOLSDIR}/dr_tools.py word-count {TMPDIR}/chapters/chapter-{N}.md`，禁止写 inline PowerShell/Python 去算。
 - 矛盾数据并排呈现而非掩盖
 
 ### 作业

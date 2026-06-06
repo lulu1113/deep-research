@@ -1,17 +1,17 @@
 {
   "quick": {
-    "max_chapters": 6,
-    "max_paragraphs": 5,
-    "max_chars": 3000
+    "min_chapters": 5,
+    "min_paragraphs": 4,
+    "max_chars": 8000
   },
   "standard": {
-    "max_chapters": 8,
-    "max_paragraphs": 8,
-    "max_chars": 5000
+    "min_chapters": 8,
+    "min_paragraphs": 5,
+    "max_chars": 12000
   },
   "deep": {
-    "max_chapters": 10,
-    "max_paragraphs": 10,
-    "max_chars": 10000
+    "min_chapters": 10,
+    "min_paragraphs": 6,
+    "max_chars": 25000
   }
 }

@@ -11,8 +11,8 @@ import re
 _PROFILES_CACHE = None
 
 def load_profile(mode: str) -> dict:
-    """Load mode profile from profiles.json. Returns dict with max_chapters,
-    max_paragraphs, max_chars for the given mode ('quick'/'standard'/'deep')."""
+    """Load mode profile from profiles.json. Returns dict with min_chapters,
+    min_paragraphs, max_chars for the given mode ('quick'/'standard'/'deep')."""
     global _PROFILES_CACHE
     if _PROFILES_CACHE is None:
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
