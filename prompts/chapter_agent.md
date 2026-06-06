@@ -22,8 +22,8 @@ QA 工具：{TOOLSDIR}/dr_tools.py（已有命令：word-count, check-encoding, 
 ### 格式
 - 纯中文，数字带来源（机构，年份）
 - 每章以 > 引用格式的核心判断开头
-- 正文段落：{模式对应段数} 段（整章合计，**不超过 8 段**），数据表 3-4 张
-- **字数控制（硬约束）**：全文上限 quick 6,000 / standard 10,000 / deep 20,000 字，本章目标 ≈ 上限÷total 章（如 quick 6,000÷6≈1,000 字/章）。段落精简原则：能用 100 字说清不写 200 字。**超出目标范围必须精简至范围内**，不得留到下游处理。
+- 正文段落：{模式对应段数} 段（整章合计），数据表 ≥ 3 张
+- 写得精简：能用 100 字说清不写 200 字。字数由装配阶段统一统计，此处不需要关心具体字数。
 - 矛盾数据并排呈现而非掩盖
 
 ### 输出方式
@@ -49,7 +49,7 @@ python {TOOLSDIR}/dr_tools.py prepare-chapter \
 
 **Step C — 使用 write 工具写入章节文件**：使用 `write` 工具创建 `{TMPDIR}/chapters/chapter-{N}.md`，写入填充完成的完整正文。
 
-**Step D — 写入后自检**（只跑一条命令，替代所有单独 check）：
+**Step D — 写入后自检**（只跑一条命令）：
 ```bash
 python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md --expected-sections [sections数]
 ```
@@ -60,16 +60,13 @@ python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md 
 ☐ `sections_ok` = true
 ☐ `paragraphs` ≥ {模式对应段数}
 ☐ `tables` ≥ 3
-☐ `word_count` 在目标范围 上限÷total 章 ±30% 内。超出范围在回答末尾注明"字数 X（目标 Y±Z），超出范围，装配阶段处理"
 ☐ 来源可追溯：手动确认每个数字标注了（机构，年份）
+（字数由装配阶段统一计算，此处不需要）
 
 **Step E — 自检通过后，使用 write 工具写入 manifest**：
-`word_count` 必须使用 Step D 中 `validate-chapter` 返回的 `word_count` 值（不是估算，不是估算，不是估算）。
-使用 `write` 工具创建 `{TMPDIR}/chapters/chapter-{N}-manifest.json`：
 ```json
-{"chapter":N,"word_count":WORD_COUNT_FROM_VALIDATE,"file_path":"{TMPDIR}/chapters/chapter-{N}.md"}
+{"chapter":N,"file_path":"{TMPDIR}/chapters/chapter-{N}.md"}
 ```
-⚠️ **JSON 编码洁净**：`file_path` 必须使用**正斜杠 `/`**（如 `"D:/TEMP/dr-xxx/chapters/chapter-1.md"`），禁止使用反斜杠 `\`——Windows 反斜杠在 JSON 中属于非法转义序列，会导致主 agent 解析失败。
+⚠️ **JSON 编码洁净**：`file_path` 必须使用**正斜杠 `/`**（如 `"D:/TEMP/dr-xxx/chapters/chapter-1.md"`），禁止使用反斜杠 `\`——Windows 反斜杠在 JSON 中属于非法转义序列。
 
 在回答中只返回文件路径。
-**关键**：字数数据在 manifest 文件中，**不得写入章节正文文件**。

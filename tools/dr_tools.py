@@ -120,7 +120,7 @@ def main():
     p = sub.add_parser('assemble-report', help='Assemble final report from chapters + metadata')
     p.add_argument('--outline', required=True)
     p.add_argument('--chapters-dir', required=True)
-    p.add_argument('--wordcount', required=True)
+    p.add_argument('--wordcount', default=None, help='Deprecated, word count computed from report')
     p.add_argument('--datapool', required=True)
     p.add_argument('--mode', choices=['quick', 'standard', 'deep'], required=True)
     p.add_argument('--target-year', type=int, required=True)
@@ -217,8 +217,9 @@ def main():
     elif args.command == 'assemble-report':
         result = assemble_report(
             outline_path=args.outline, chapters_dir=args.chapters_dir,
-            wordcount_path=args.wordcount, datapool_path=args.datapool,
+            datapool_path=args.datapool,
             mode=args.mode, target_year=args.target_year,
+            wordcount_path=args.wordcount,
             output_path=args.output)
         if result['passed']:
             print(f"Report assembled: {result['output_path']} ({result['line_count']} lines, {result['chapter_count']} chapters, {result['word_count']} chars)")

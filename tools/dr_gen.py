@@ -400,10 +400,16 @@ DISCLAIMER = (
 
 
 def assemble_report(outline_path: str, chapters_dir: str,
-                    wordcount_path: str, datapool_path: str,
+                    datapool_path: str,
                     mode: str, target_year: int,
+                    wordcount_path: str = None,
                     output_path: str = None) -> dict:
-    """Assemble final report from chapter files, outline, and metadata."""
+    """Assemble final report from chapter files, outline, and metadata.
+    
+    wordcount_path is no longer used — word count is computed from the
+    assembled report text at the end. Kept as optional param for backward compat.
+    """
+    from dr_check import word_count as wc_func
     issues = []
 
     # 1. Read outline
@@ -424,14 +430,6 @@ def assemble_report(outline_path: str, chapters_dir: str,
         output_path = base
     chapters = outline.get('chapters', [])
     depth_mode = outline.get('depth_mode', mode)
-
-    # 2. Read word counts
-    try:
-        with open(wordcount_path, 'r', encoding='utf-8') as f:
-            wc_data = json.load(f)
-    except Exception:
-        wc_data = {}
-    total_wc = sum(wc_data.values())
 
     # 3. Collect and order chapter files
     chapter_files = []
@@ -455,8 +453,7 @@ def assemble_report(outline_path: str, chapters_dir: str,
         # Wrap in section block
         chapter_texts.append(content)
 
-    # 6. Generate metadata
-    reading_time = max(1, round(total_wc / 600))
+    # 6. Build report body first (without metadata — word count unknown yet)
     data_until = f"{target_year}年"
     from datetime import datetime
     generate_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -495,34 +492,51 @@ def assemble_report(outline_path: str, chapters_dir: str,
     except Exception:
         version = ""
 
-    meta = generate_metadata(
-        word_count=total_wc,
-        reading_time=reading_time,
-        data_until=data_until,
-        generate_time=generate_time,
-        depth_mode=depth_mode,
-        source_count=total_sources,
-        top_sources=top_sources,
-        skill_version=version,
+    # Assemble temporary report with placeholder word count to compute actual word count
+    temp_meta = generate_metadata(
+        word_count=0, reading_time=1,
+        data_until=data_until, generate_time=generate_time,
+        depth_mode=depth_mode, source_count=total_sources,
+        top_sources=top_sources, skill_version=version,
     )
+    temp_parts = [
+        f"# {title}\n",
+        f"{temp_meta['full_block']}\n",
+        "## 目录\n", toc_text, "\n",
+    ]
+    temp_parts.extend(chapter_texts)
+    temp_parts.append("\n\n---\n\n")
+    temp_parts.append(ref_text)
+    temp_parts.append(f"\n\n## 免责声明\n\n{DISCLAIMER}\n")
+    temp_parts.append(f"\n*报告生成时间：{generate_time}*\n")
+    full_report = '\n'.join(temp_parts)
 
-    # 7. Assemble full report
+    # 7. Compute word count from assembled report
+    total_wc = wc_func(output_path) if os.path.exists(output_path) else 0
+    if total_wc == 0:
+        total_wc = len(re.sub(r'\s+', '', full_report))
+    reading_time = max(1, round(total_wc / 600))
+
+    # 8. Re-generate metadata with real word count, then assemble final
+    meta = generate_metadata(
+        word_count=total_wc, reading_time=reading_time,
+        data_until=data_until, generate_time=generate_time,
+        depth_mode=depth_mode, source_count=total_sources,
+        top_sources=top_sources, skill_version=version,
+    )
     report_parts = [
         f"# {title}\n",
         f"{meta['full_block']}\n",
-        "## 目录\n",
-        toc_text,
-        "\n",
+        "## 目录\n", toc_text, "\n",
     ]
     report_parts.extend(chapter_texts)
     report_parts.append("\n\n---\n\n")
     report_parts.append(ref_text)
     report_parts.append(f"\n\n## 免责声明\n\n{DISCLAIMER}\n")
     report_parts.append(f"\n*报告生成时间：{generate_time}*\n")
-
     full_report = '\n'.join(report_parts)
 
-    # 8. Write via write_md logic (UTF-8 no BOM)
+    # 9. Write via write_md logic (UTF-8 no BOM)
     tmp = output_path + '.tmp'
     try:
         with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
@@ -531,7 +545,7 @@ def assemble_report(outline_path: str, chapters_dir: str,
     except Exception as e:
         return {"passed": False, "issues": [f"Write failed: {e}"]}
 
-    # 9. Verify writing
+    # 10. Verify writing
     enc_check = check_encoding(output_path)
     if not enc_check['passed']:
         issues.append(f"Encoding issue in assembled report: {enc_check['issues']}")

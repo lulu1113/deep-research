@@ -2,7 +2,6 @@
 
 ## 输入
 - 大纲文件：{TMPDIR}/outline.json
-- 字数汇总：{TMPDIR}/wordcounts.json（各章字数和，直接读取计算总字数，禁止从章节文件重新统计）
 - 注意事项：{TMPDIR}/cautions.json（数据质量警告，装配阶段不写入报告但可参考）
 - 章节目录：{TMPDIR}/chapters/（包含 chapter-1.md, chapter-2.md…）
 - 输出目录：`案例报告/`（`~/.opencode/skills/deep-research/案例报告/`）
@@ -15,13 +14,12 @@
 
 ## Step 1 — 装配
 
-用 `assemble-report` 一条命令完成全部机械装配（章节排序 → 汉字编号 → 目录 → 元数据 → 来源提取 → 尾部拼接 → 编码洁净写入）。
+用 `assemble-report` 一条命令完成全部机械装配（章节排序 → 汉字编号 → 目录 → 元数据 → 来源提取 → 尾部拼接 → 编码洁净写入）。**字数在装配后由脚本自动计算，不需要提前准备 wordcounts.json。**
 
 ```bash
 python {TOOLSDIR}/dr_tools.py assemble-report \
   --outline {TMPDIR}/outline.json \
   --chapters-dir {TMPDIR}/chapters/ \
-  --wordcount {TMPDIR}/wordcounts.json \
   --datapool {TMPDIR}/data-pool.json \
   --mode {depth_mode} \
   --target-year {target_year} \
@@ -47,10 +45,10 @@ python {TOOLSDIR}/dr_tools.py convert-citations \
 装配前请自行确认以下参数：
 - `depth_mode`：从 outline.json 读取
 - `target_year`：从 outline.json 的 time_anchor.target_year 读取
-- `总字数`：读取 wordcounts.json 求和
 - `生成时间`：当前 `date` 命令值
 - `输出路径`：优先用户指定，无则 `案例报告/`
 - `data_limited`：如为 true，报告开头追加醒目标注 `> ⚠️ **数据说明**：本次调研数据来源较为有限（共引用 N 个来源），部分结论基于有限样本，仅供参考。`，并将 QA 的年份密度和段落达标标准各降低 30%
+- **总字数在装配后自动计算**，无需提前准备
 
 ## Step 2 — QA 验收
 
