@@ -235,22 +235,71 @@ def check_datapool(filepath: str, mode: str) -> dict:
 
 # ── Full QA Report ────────────────────────────────────────────────────────
 
+def _run_checks_concurrent(filepath: str, target_year: int) -> dict:
+    """Run all file-level checks concurrently using ThreadPoolExecutor.
+    
+    Independent checks (encoding, word_count, headers, chapter_numbers,
+    metadata, tail, year_density) run in parallel via threads since they
+    are all I/O-bound (reading same file independently).
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _wc(p):
+        wc = word_count(p)
+        return {'word_count': wc}
+
+    def _toc(p, expected):
+        return {'toc': check_toc(p, expected=expected)}
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        futures = {
+            ex.submit(check_encoding, filepath): 'encoding',
+            ex.submit(_wc, filepath): 'word_count_raw',
+            ex.submit(check_headers, filepath): 'headers',
+            ex.submit(check_chapter_numbers, filepath): 'chapter_numbers',
+            ex.submit(check_metadata, filepath): 'metadata',
+            ex.submit(check_tail, filepath): 'tail',
+            ex.submit(year_density, filepath, target_year): 'year_density',
+        }
+        for fut in as_completed(futures):
+            key = futures[fut]
+            try:
+                result = fut.result()
+                if key == 'word_count_raw':
+                    results['word_count_raw'] = result['word_count']
+                else:
+                    results[key] = result
+            except Exception as e:
+                results[key] = {"passed": False, "issues": [f"Check error: {e}"]}
+
+    # chapter_numbers needed for TOC expected count, so TOC must be done after
+    expected = results.get('chapter_numbers', {}).get('count', 0)
+    results['toc'] = check_toc(filepath, expected=expected)
+
+    return results
+
+
 def qa_report(filepath: str, mode: str, target_year: int) -> dict:
     """Run all checks and return aggregated result."""
+    raw = _run_checks_concurrent(filepath, target_year)
+
+    # Build results dict in the expected schema
     results = {}
-    results['encoding'] = check_encoding(filepath)
-    wc = word_count(filepath)
+    results['encoding'] = raw.get('encoding', {"passed": False, "issues": ["missing"]})
+    results['headers'] = raw.get('headers', {"passed": False, "issues": ["missing"]})
+    results['chapter_numbers'] = raw.get('chapter_numbers', {"passed": False, "issues": ["missing"]})
+    results['metadata'] = raw.get('metadata', {"passed": False, "issues": ["missing"]})
+    results['toc'] = raw.get('toc', {"passed": False, "issues": ["missing"]})
+    results['tail'] = raw.get('tail', {"passed": False, "issues": ["missing"]})
+    results['year_density'] = raw.get('year_density', {"passed": False, "issues": ["missing"]})
+
+    wc = raw.get('word_count_raw', 0)
     limits = {'quick': 16000, 'standard': 16000, 'deep': 28000}
     limit = limits.get(mode, 16000)
     results['word_count'] = {"passed": wc <= limit, "count": wc, "limit": limit,
                               "issues": [] if wc <= limit else [f"{wc} > {limit} limit"]}
-    results['headers'] = check_headers(filepath)
-    results['chapter_numbers'] = check_chapter_numbers(filepath)
-    results['metadata'] = check_metadata(filepath)
-    expected_chapters = results['chapter_numbers']['count']
-    results['toc'] = check_toc(filepath, expected=expected_chapters)
-    results['tail'] = check_tail(filepath)
-    results['year_density'] = year_density(filepath, target_year)
+
     all_passed = all(r.get('passed', False) for r in results.values())
     failures = {name: r.get('issues', []) for name, r in results.items()
                 if not r.get('passed', False) and r.get('issues')}
