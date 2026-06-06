@@ -94,8 +94,9 @@ risk: medium
     → 向用户报告进度（"N 章撰写完成，进入装配"）
  9. ══ Task 5 — 装配 + QA（**主 agent 直接执行，不派 sub-agent**） ══
     → **Step 1 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
-    → **Step 2 — 引用转换**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`（`$REPORT` 替换为上一步输出的实际路径）
-    → **Step 3 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出中的 passed 字段
+    → **Step 2 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，用 `bash` + `Get-Content` 读取报告文件，在标题行后插入 `> ⚠️ **数据说明**：本次调研数据来源较为有限（共引用 N 个来源），部分结论基于有限样本，仅供参考。`，用 `write` 写回（用 `-replace` 在 `^# ` 标题后追加一行）。
+    → **Step 3 — 引用转换**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`
+    → **Step 4 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出中的 passed 字段。如果 `data_limited=true`，年份密度和段落标准各降低 30% 看待。
     → 使用 `write` 工具创建 {TMPDIR}/task5_manifest.json（含 qa_passed 结果）
     → todowrite 标记完成
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值，不可跳过）：
