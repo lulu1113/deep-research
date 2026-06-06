@@ -2,7 +2,7 @@
 主题：[章节 title]
 章节编号 N：[N]（例如第 4 章则 N=4）
 总章节数 total：[total]（报告共有 N 章，用于估算本章字数上限）
-数据池文件：{TMPDIR}/data-pool.json（用 jq 或 grep 提取本章相关子问题的 facts；字段名统一为 src/yr/met/val/u/ctx，quick 模式无 cur/conf，standard/deep 有）
+数据池文件：{TMPDIR}/ch{N}-facts.json（已按章节预分片，只含本章子问题的事实）
 注意事项文件：{TMPDIR}/cautions.json（含 ⚠️ 标记的事实列表，阅读后留意存疑/过时/冲突数据）
 QA 工具：{TOOLSDIR}/dr_tools.py（已有命令：word-count, check-encoding, check-headers, check-chapter-numbers, json-validate）
 
@@ -22,8 +22,8 @@ QA 工具：{TOOLSDIR}/dr_tools.py（已有命令：word-count, check-encoding, 
 ### 格式
 - 纯中文，数字带来源（机构，年份）
 - 每章以 > 引用格式的核心判断开头
- - 正文段落 ≥ {模式对应段数} 段，数据表 ≥ 3 张
- - 字数控制：全文总上限 quick 10,000 / standard 16,000 / deep 28,000 字，本章目标 ≈ 上限÷total 章（如 quick 10,000÷6≈1,700 字/章），浮动 ±30% 内无需修改，超出范围在回答中注明"字数 X（目标 Y），需要装配阶段调整"即可
+- 正文段落：{模式对应段数} 段（整章合计，**不超过 8 段**），数据表 3-4 张
+- **字数控制（硬约束）**：全文上限 quick 10,000 / standard 16,000 / deep 28,000 字，本章目标 ≈ 上限÷total 章（如 quick 10,000÷6≈1,700 字/章）。段落精简原则：能用 100 字说清不写 200 字。超出目标范围时**必须精简至范围内**，**不允许**标注"装配阶段处理"。
 - 矛盾数据并排呈现而非掩盖
 
 ### 输出方式

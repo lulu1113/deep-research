@@ -85,8 +85,9 @@ risk: medium
     → 读取 {TMPDIR}/task3_manifest.json + cautions.json，提取预检结果 + cautions 列表 + data_limited 标记
     → todowrite 标记完成
     → 向用户报告进度（"预检通过，开始撰写 N 章"）
- 8. ══ Task 4 — 并行派发章节撰写 ══
-    → 读取 {TMPDIR}/outline.json 获取 chapters 数组
+ 8. ══ Task 4 — 预分片 + 并行派发章节撰写 ══
+    → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
+    → **按章节预分片数据池**：遍历 outline.chapters，对每章提取其 sub_questions 对应的 data-pool 条目，用 `write` 工具写入 `{TMPDIR}/ch{N}-facts.json`（N=章节号）。这比让每个章节 agent 读全量 data-pool 更省 token、写得更快。
     → 在一个循环内为每一章调用 task()，全部使用 run_in_background=true 一次性发出
     → 收集所有 background task ID
     → 发出所有章节后，统一等待全部完成
