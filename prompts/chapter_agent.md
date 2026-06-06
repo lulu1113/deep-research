@@ -49,20 +49,25 @@ python {TOOLSDIR}/dr_tools.py prepare-chapter \
 
 **Step C — 使用 write 工具写入章节文件**：使用 `write` 工具创建 `{TMPDIR}/chapters/chapter-{N}.md`，写入填充完成的完整正文。
 
-**Step D — 写入后自检**（缺一不可）：
-☐ 编码洁净：`python {TOOLSDIR}/dr_tools.py check-encoding {TMPDIR}/chapters/chapter-{N}.md` 返回 PASS
-☐ 子节编号合规：`python {TOOLSDIR}/dr_tools.py check-headers {TMPDIR}/chapters/chapter-{N}.md` 返回 PASS；同时确认 sections 数量匹配
-☐ 子节数量匹配：子节数与 outline 中 sections 列表长度一致
-☐ 核心判断：首段以 `>` 引用格式开头
-☐ 段落达标：正文段落 ≥ {模式对应段数} 段
-☐ 数据表达标：数据表 ≥ 3 张
-☐ 来源可追溯：每个数字标注（机构，年份）
-☐ 字数参考：`python {TOOLSDIR}/dr_tools.py word-count {TMPDIR}/chapters/chapter-{N}.md` 返回值参考 上限÷total 章 ±30%（如 quick 10,000÷10=1,000±300 字），超出范围不必重写，在回答末尾注明"字数 X（目标 Y±Z），超出范围，装配阶段处理"即可
+**Step D — 写入后自检**（只跑一条命令，替代所有单独 check）：
+```bash
+python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md --expected-sections [sections数]
+```
+验证 JSON 输出中的以下字段：
+☐ `encoding` = true
+☐ `headers` = true
+☐ `has_blockquote` = true
+☐ `sections_ok` = true
+☐ `paragraphs` ≥ {模式对应段数}
+☐ `tables` ≥ 3
+☐ `word_count` 在目标范围 上限÷total 章 ±30% 内。超出范围在回答末尾注明"字数 X（目标 Y±Z），超出范围，装配阶段处理"
+☐ 来源可追溯：手动确认每个数字标注了（机构，年份）
 
 **Step E — 自检通过后，使用 write 工具写入 manifest**：
-使用 `write` 工具创建 `{TMPDIR}/chapters/chapter-{N}-manifest.json`，写入以下 JSON：
+`word_count` 必须使用 Step D 中 `validate-chapter` 返回的 `word_count` 值（不是估算，不是估算，不是估算）。
+使用 `write` 工具创建 `{TMPDIR}/chapters/chapter-{N}-manifest.json`：
 ```json
-{"chapter":N,"word_count":3580,"file_path":"{TMPDIR}/chapters/chapter-{N}.md"}
+{"chapter":N,"word_count":WORD_COUNT_FROM_VALIDATE,"file_path":"{TMPDIR}/chapters/chapter-{N}.md"}
 ```
 ⚠️ **JSON 编码洁净**：`file_path` 必须使用**正斜杠 `/`**（如 `"D:/TEMP/dr-xxx/chapters/chapter-1.md"`），禁止使用反斜杠 `\`——Windows 反斜杠在 JSON 中属于非法转义序列，会导致主 agent 解析失败。
 

@@ -11,7 +11,7 @@ from dr_check import (
     check_encoding, word_count, json_validate,
     check_headers, check_chapter_numbers, check_metadata,
     check_toc, check_tail, year_density, check_datapool,
-    qa_report,
+    validate_chapter, qa_report,
 )
 from dr_gen import (
     extract_sources, generate_toc, generate_metadata,
@@ -69,6 +69,9 @@ def main():
     p = sub.add_parser('check-datapool', help='Validate data-pool.json structure')
     p.add_argument('file')
     p.add_argument('--mode', choices=['quick', 'standard', 'deep'], required=True)
+    p = sub.add_parser('validate-chapter', help='Single-command: all chapter checks at once')
+    p.add_argument('file')
+    p.add_argument('--expected-sections', type=int, default=0)
     p = sub.add_parser('qa-report', help='Full report quality check')
     p.add_argument('file')
     p.add_argument('--mode', choices=['quick', 'standard', 'deep'], required=True)
@@ -148,6 +151,10 @@ def main():
         _exit(year_density(args.file, target_year=args.target_year))
     elif args.command == 'check-datapool':
         _exit(check_datapool(args.file, mode=args.mode))
+    elif args.command == 'validate-chapter':
+        result = validate_chapter(args.file, expected_sections=args.expected_sections)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        sys.exit(0)
     elif args.command == 'qa-report':
         result = qa_report(args.file, mode=args.mode, target_year=args.target_year)
         print(json.dumps(result, ensure_ascii=False, indent=2))

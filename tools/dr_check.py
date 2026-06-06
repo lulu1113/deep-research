@@ -233,6 +233,78 @@ def check_datapool(filepath: str, mode: str) -> dict:
     return {"passed": len(issues) == 0, "issues": issues, "record_count": len(records)}
 
 
+# ── Chapter Validation (single-command for sub-agents) ─────────────────
+
+def validate_chapter(filepath: str, expected_sections: int = 0) -> dict:
+    """Run all chapter-level checks and return single JSON result.
+    
+    This is the ONE command chapter agents should run instead of
+    calling 5+ separate check-* commands. Keeps sub-agents from
+    writing inline validation code.
+    """
+    results = {}
+    
+    # encoding
+    enc = check_encoding(filepath)
+    results['encoding'] = enc['passed']
+    
+    # headers
+    hdr = check_headers(filepath)
+    results['headers'] = hdr['passed']
+    
+    # word count
+    try:
+        wc = word_count(filepath)
+    except Exception:
+        wc = 0
+    results['word_count'] = wc
+    
+    # blockquote at start (after stripping blank lines)
+    with open(filepath, 'r', encoding='utf-8') as f:
+        lines = [l.strip() for l in f.readlines() if l.strip()]
+    has_bq = len(lines) > 0 and lines[0].startswith('>')
+    results['has_blockquote'] = has_bq
+    
+    # paragraph count (non-heading, non-table, non-empty, non-quote lines)
+    para_count = 0
+    in_table = False
+    for line in lines:
+        if line.startswith('|') and line.endswith('|'):
+            in_table = True
+            continue
+        if in_table and not (line.startswith('|') and line.endswith('|')):
+            in_table = False
+        if in_table:
+            continue
+        if line.startswith('#'):
+            continue
+        if line.startswith('>'):
+            continue
+        if line.startswith('|---'):
+            continue
+        if line.startswith('|'):
+            continue
+        para_count += 1
+    results['paragraphs'] = para_count
+    
+    # table count
+    table_count = sum(1 for l in lines if l.startswith('|---'))
+    results['tables'] = table_count
+    
+    # section headers found
+    section_headers = [l.lstrip('#').strip() for l in lines if l.startswith('###')]
+    results['sections'] = section_headers
+    results['section_count'] = len(section_headers)
+    results['sections_ok'] = expected_sections == 0 or len(section_headers) == expected_sections
+    
+    # overall
+    checks = [results['encoding'], results['headers'], results['has_blockquote'],
+              results['sections_ok']]
+    results['passed'] = all(checks)
+    
+    return results
+
+
 # ── Full QA Report ────────────────────────────────────────────────────────
 
 def _run_checks_concurrent(filepath: str, target_year: int) -> dict:
