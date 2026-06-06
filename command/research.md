@@ -10,9 +10,9 @@ skill(name="deep-research")
 ```
 
 Parse `$ARGUMENTS` to determine the research topic and optional mode flags:
-- `/research 主题` → standard 模式（默认，8-12段/章）
-- `/research 主题 -quick` → quick 模式（5-8段/章）
-- `/research 主题 -deep` → deep 模式（10-15段/章）
+- `/research 主题` → standard 模式
+- `/research 主题 -quick` → quick 模式
+- `/research 主题 -deep` → deep 模式
 </command-instruction>
 
 <user-request>

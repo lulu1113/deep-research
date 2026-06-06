@@ -2,7 +2,7 @@
 
 **OpenCode 深度调研报告生成 Skill。**
 
-> **当前版本：** `1.0.1` · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
+> **当前版本：** 见 [`VERSION`](VERSION) · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
 
 **一个命令，六分钟，一份深度专业的调研报告。**
 
@@ -107,9 +107,9 @@ GDELT 全球新闻   │  36氪 / 澎湃新闻（科技商业新闻）
 
 | 命令                    | 用途          | 段落量       | 字数参考             | 行数参考  | 耗时         |
 | --------------------- | ----------- | --------- | ---------------- | ----- | ---------- |
-| `/research 主题`        | standard 默认 | 8-12 段/章  | ~8,000–15,000 字  | ~500+ | ~6–10 min  |
-| `/research 主题 -quick` | 快速洞察        | 5-8 段/章   | ~5,000–8,000 字   | ~250+ | ~5–8 min   |
-| `/research 主题 -deep`  | 极致深度        | 10-15 段/章 | ~15,000–30,000 字 | ~800+ | ~12–18 min |
+| `/research 主题`        | standard 默认 | 8-12 段/章  | ~6,000–12,000 字  | ~500+ | ~6–10 min  |
+| `/research 主题 -quick` | 快速洞察        | 5-8 段/章   | ~4,000–6,500 字   | ~250+ | ~5–8 min   |
+| `/research 主题 -deep`  | 极致深度        | 10-15 段/章 | ~12,000–24,000 字 | ~800+ | ~12–18 min |
 
 ## 八、运行截图
 <img width="1807" height="1449" alt="image" src="https://github.com/user-attachments/assets/f13fccef-dee1-43ef-a1bc-1aabda02b86f" />
