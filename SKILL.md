@@ -15,7 +15,7 @@ risk: medium
 - **安装**：见下方「安装与配置」
 - **输出**：`$TMPDIR/outline.json`（临时，非最终报告）
 - **最终报告**：保存到 skill 目录下的 `案例报告/`
-- **参考文件**：`RULES.md`（硬约束/反模式）、`TYPES.md`（分类标准/编号规范）、**`profiles.json`（三档模式参数，修改即全局生效）**
+- **参考文件**：`RULES.md`（硬约束/反模式）、`TYPES.md`（分类标准/编号规范）、**`profiles.json`（三档模式参数，修改后重启软件即全局生效）**
 - **容错原则**：调研不阻塞。所有脚本/命令调用必须有兜底路径。主路径失败 → 自动尝试替代方案（换 `sys.executable`/检查路径/直接 Python 实现）→ 三次失败后向用户报告具体问题。详见「容错原则」。
 
 ---
@@ -36,7 +36,7 @@ risk: medium
 | 10 | **目录源自大纲** | 目录从 outline.json 的第一级章节生成，不从正文提取 |
 | 11 | **强制目录** | 报告正文前必须包含 `## 目录` 标题及自动目录（TOC），列出所有章节标题 |
 | 12 | **元数据完整** | 报告头部必须包含 总字数、阅读时间、数据截至日期（精确到月）、报告生成具体时间（精确到秒）、调研模式、Skill版本 六个字段，用 ` · ` 隔开。另起一行 `> **参考来源**：{主要来源} 等 · 共引用 N 个来源`。报告末尾须附 `## 参考来源`（列出所有引用机构及链接）和 `## 免责声明`。版本号从本 skill 的 VERSION 文件读取。 |
-| 13 | **篇幅达标** | 见 `profiles.json`：quick ≤6 章/5 段/章/3,000 字，standard ≤8 章/8 段/章/5,000 字，deep ≤10 章/10 段/章/10,000 字。所有模式限制以 `profiles.json` 为准，修改它即全局生效。 |
+| 13 | **篇幅达标** | 见 `profiles.json`：quick ≤6 章/5 段/章/3,000 字，standard ≤8 章/8 段/章/5,000 字，deep ≤10 章/10 段/章/10,000 字。所有模式限制以 `profiles.json` 为准，修改后重启软件即全局生效。 |
 | 14 | **四段式结构** | 顺序固定为：报告标题 → 元数据块（含六字段 + 参考来源行） → `## 目录` → 正文各章 → 尾部（参考来源 + 免责声明） |
 | 15 | **编码洁净** | 所有中间文件（outline.json / data-pool.json / chapter-*.md）必须使用 **UTF-8 无 BOM** 编码写入，不得出现替换字符（\ufffd）或 GBK→UTF-8 Mojibake。子 agent 在写入前必须自行验证编码洁净，不得将编码问题遗留到主 agent |
 
@@ -148,7 +148,7 @@ risk: medium
 - `[total]` → chapters 数组总长度
 - `[sections 列表]` → 当前章的 sections 数组（逗号分隔）
 - `{per_chapter_chars}` → `profiles.json` 中当前模式的 `max_chars ÷ 总章数`（主 agent 一次性算好）
-- `{max_paragraphs}` → `profiles.json` 中当前模式的 `max_paragraphs`
+- `{min_paragraphs}` → `profiles.json` 中当前模式的 `min_paragraphs`
 - `{调研模式}` → quick / standard / deep（当前调研模式）
 - `{TMPDIR}` → 运行时临时目录
 - `{TOOLSDIR}` → tools 目录

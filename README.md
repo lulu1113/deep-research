@@ -108,7 +108,7 @@ GDELT 全球新闻   │  36氪 / 澎湃新闻（科技商业新闻）
 | `/research 主题` | standard 默认 | 8 | ≥ 5 | ≤ 12,000 | ~6–10 min |
 | `/research 主题 -quick` | 快速洞察 | 5 | ≥ 4 | ≤ 8,000 | ~5–8 min |
 | `/research 主题 -deep` | 极致深度 | 10 | ≥ 6 | ≤ 25,000 | ~12–18 min |
-> 以上参数见 `profiles.json`，修改该文件即全局生效。字数 = 去掉空格和 Markdown 语法的纯字符数，由 `dr_tools.py word-count` 统一计算。
+> 以上参数见 `profiles.json`，修改该文件后重启软件即全局生效。字数 = 去掉空格和 Markdown 语法的纯字符数。
 
 ## 八、运行截图
 <img width="1807" height="1449" alt="image" src="https://github.com/user-attachments/assets/f13fccef-dee1-43ef-a1bc-1aabda02b86f" />
