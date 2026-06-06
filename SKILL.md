@@ -83,20 +83,24 @@ risk: medium
     → 读取 {TMPDIR}/task2_manifest.json，提取 source_count + fact_count + fetch_method + data_limited + cautions_path
     → todowrite 标记完成
     → 向用户报告进度（"数据已收集，N 个来源，🔧 Scrapling/🌐 webfetch"）
- 8. ══ Task 4 — 预分片 + 并行派发章节撰写 ══
+ 8. ══ Task 4 — 并行派发章节撰写 ══
     → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
-    → **按章节预分片数据池**：遍历 outline.chapters，对每章提取其 sub_questions 对应的 data-pool 条目，用 `write` 工具写入 `{TMPDIR}/ch{N}-facts.json`（N=章节号）。这比让每个章节 agent 读全量 data-pool 更省 token、写得更快。
-    → 在一个循环内为每一章调用 task()，全部使用 run_in_background=true 一次性发出
-    → 收集所有 background task ID
-    → 发出所有章节后，统一等待全部完成
-    → **不用统计字数**（装配阶段统一计算，中间环节不需要）
+    → 读取 `{PROMPTSDIR}/chapter_agent.md` 模板
+    → 在一个循环内为每一章调用 task()：
+      - 读取 outline.chapters[N] 的 title、sections
+      - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
+      - **将事实直接嵌入 prompt**（替换 `[章节 title]`、`[N]`、`[sections 列表]`，并在 prompt 末尾追加该章相关的事实列表）
+      - 全部使用 run_in_background=true 一次性发出
+    → 收集所有 background task ID，等待全部完成
+    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
     → todowrite 标记完成（每完成一章标记一个子项）
-    → 向用户报告进度（"N 章撰写完成，进入装配"）
- 9. ══ Task 5 — 装配 + QA（**主 agent 直接执行，不派 sub-agent**） ══
-    → **Step 1 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
-    → **Step 2 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，用 `bash` + `Get-Content` 读取报告文件，在标题行后插入 `> ⚠️ **数据说明**：本次调研数据来源较为有限（共引用 N 个来源），部分结论基于有限样本，仅供参考。`，用 `write` 写回（用 `-replace` 在 `^# ` 标题后追加一行）。
-    → **Step 3 — 引用转换**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`
-    → **Step 4 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出中的 passed 字段。如果 `data_limited=true`，年份密度和段落标准各降低 30% 看待。
+    → 向用户报告进度（"N 章撰写完成，进入验证"）
+ 9. ══ Task 5 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
+    → **Step 1 — 逐章验证**：对所有章节运行 `python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md --expected-sections [sections数]`，逐个检查 encoding/headers/blockquote/sections 均通过。如有失败，重新生成该章。
+    → **Step 2 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
+    → **Step 3 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，在报告标题后插入数据说明声明。
+    → **Step 4 — 引用转换**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`
+    → **Step 5 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出的 passed 字段
     → 使用 `write` 工具创建 {TMPDIR}/task5_manifest.json（含 qa_passed 结果）
     → todowrite 标记完成
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值，不可跳过）：
