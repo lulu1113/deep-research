@@ -82,11 +82,12 @@ risk: medium
  7. ══ Task 3 — 并行派发章节撰写 ══
     → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
     → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
+    → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
     → 读取 `{PROMPTSDIR}/chapter_agent.md` 模板
-    → 在一个循环内为每一章调用 task()：
+     → 在一个循环内为每一章调用 task()：
       - 读取 outline.chapters[N] 的 title、sections
       - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
-      - **将事实直接嵌入 prompt**（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的事实列表）
+      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
       - 全部使用 run_in_background=true 一次性发出
     → 收集所有 background task ID，等待全部完成
     → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
@@ -96,7 +97,7 @@ risk: medium
     → **Step 1 — 逐章验证**：对所有章节运行 `python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md --expected-sections [sections数]`，逐个检查 encoding/headers/blockquote/sections 均通过。如有失败，重新生成该章。
     → **Step 2 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
     → **Step 3 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，在报告标题后插入数据说明声明。
-    → **Step 4 — 引用转换**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`
+    → **Step 4 — 引用处理**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`（从 data-pool 构建参考章节，验证正文 `[N]` 引用均有对应条目）
     → **Step 5 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出的 passed 字段
     → 使用 `write` 工具创建 {TMPDIR}/task4_manifest.json（含 qa_passed 结果）
     → todowrite 标记完成

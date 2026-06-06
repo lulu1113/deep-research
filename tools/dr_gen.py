@@ -160,61 +160,58 @@ def _read_json_handle_bom(path: str):
 
 
 def convert_citations(report_path: str, datapool_path: str, output_path: str = None) -> dict:
-    """Convert （机构，年份） citations to [N](#refN) clickable links with reference list.
+    """Build reference section from data-pool, validate [N] citations in body.
 
-    [N] in body links to <a id="refN"> at bottom — supports clickable
-    navigation in most markdown renderers.
+    Chapter agents write [N] directly (N pre-assigned from data-pool).
+    This function:
+      1. Builds ref_map from data-pool (first-appearance order of src+yr)
+      2. Scans body for [N] references
+      3. Validates every [N] has a matching ref entry
+      4. Appends/replaces the ## 参考来源 section
     """
     with open(report_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Extract all citations in order of first appearance
-    citations = CITATION_RE.findall(content)
-    if not citations:
-        return {"passed": False, "issues": ["No citations found"], "changes": 0}
+    # Check: report should NOT contain （机构，年份） patterns
+    legacy_cites = re.findall(r'[（(][^）)]+?[，,]\s*\d{4}[）)]', content)
+    if legacy_cites:
+        issues = [f"Found {len(legacy_cites)} legacy （机构，年份） citations — chapter agents must use [N] format"]
+        return {"passed": False, "issues": issues, "changes": 0}
 
-    # Deduplicate preserving first-occurrence order
-    seen = set()
-    ordered = []
-    for inst, yr in citations:
-        key = (inst.strip(), yr)
-        if key not in seen:
-            seen.add(key)
-            ordered.append(key)
-
-    # Build mapping: (inst, yr) → ref number
-    ref_map = {pair: i + 1 for i, pair in enumerate(ordered)}
-
-    # Replace in-text citations with clickable [N](#refN)
-    def _replace(m):
-        inst = m.group(1).strip()
-        yr = m.group(2)
-        num = ref_map.get((inst, yr))
-        if not num:
-            for (i, y), n in ref_map.items():
-                if y == yr and inst in i:
-                    num = n
-                    break
-            if not num:
-                return m.group(0)
-        return f'[{num}](#ref{num})'
-
-    new_content = CITATION_RE.sub(_replace, content)
-
-    # Load data-pool for titles/URLs
+    # Load data-pool and build ref_map from first-appearance order
     data = _read_json_handle_bom(datapool_path)
     records = data if isinstance(data, list) else [data]
 
+    seen = set()
+    ordered_refs = []  # (inst, yr) in first-appearance order
     pool_map = {}  # (inst, yr) → (title, url)
     for rec in records:
         for fact in rec.get('facts') or []:
             inst = fact.get('src', '').strip()
             yr = fact.get('yr', '')
+            key = (inst, yr)
+            if key not in seen and inst and yr:
+                seen.add(key)
+                ordered_refs.append(key)
             url = fact.get('url', '').strip()
             title = fact.get('title', '').strip()
             if inst and yr and url:
-                pool_map[(inst, yr)] = (title or inst, url)
+                pool_map[key] = (title or inst, url)
 
+    ref_map = {pair: i + 1 for i, pair in enumerate(ordered_refs)}
+
+    # Scan body for [N] patterns (chapter agents write these directly)
+    body = content.split('## 参考来源')[0] if '## 参考来源' in content else content
+    body_refs = set(re.findall(r'(?<!!)\[(\d+)\](?!\()', body))
+
+    issues = []
+    for num in sorted(body_refs, key=int):
+        num_i = int(num)
+        if num_i < 1 or num_i > len(ref_map):
+            issues.append(f"Body references [{
+                num}] which has no data-pool entry")
+
+    # Build reference section
     ref_lines = ["\n\n## 参考来源\n\n"]
     for (inst, yr), num in sorted(ref_map.items(), key=lambda x: x[1]):
         title, url = pool_map.get((inst, yr), (inst, ''))
@@ -228,43 +225,31 @@ def convert_citations(report_path: str, datapool_path: str, output_path: str = N
 
     ref_text = '\n'.join(ref_lines)
 
-    # Replace old ## 参考来源 section (if already present) with new
-    old_section = re.search(r'## 参考来源.*?(?=\n## |\Z)', new_content, re.DOTALL)
+    # Insert/replace ## 参考来源 section
+    old_section = re.search(r'## 参考来源.*?(?=\n## |\Z)', content, re.DOTALL)
     if old_section:
-        new_content = new_content[:old_section.start()] + ref_text + new_content[old_section.end():]
+        new_content = content[:old_section.start()] + ref_text + content[old_section.end():]
     else:
-        # Append if section not found
-        new_content += ref_text
+        new_content = content + ref_text
 
+    # Validate: every [N] in body has matching ref anchor
+    ref_anchors = set(re.findall(r'<a id="ref(\d+)"></a>', new_content))
+    missing_in_refs = body_refs - ref_anchors
+    orphan_anchors = ref_anchors - body_refs
+    if missing_in_refs:
+        issues.append(
+            f"Citations without matching reference: [{', '.join(sorted(missing_in_refs, key=int))}]")
+
+    # Write output
     output = output_path or report_path
     tmp = output + '.tmp'
     with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
         f.write(new_content)
     os.replace(tmp, output)
 
-    # ── Post-conversion validation ──
-    issues = []
-    body = new_content.split('## 参考来源')[0] if '## 参考来源' in new_content else new_content
-
-    # Check 1: any remaining （机构，年份） patterns that weren't converted
-    remaining = CITATION_RE.findall(body)
-    if remaining:
-        issues.append(f"{len(remaining)} unconverted （机构，年份） patterns remain in body")
-
-    # Check 2: every [N] in body has a matching ref anchor
-    body_refs = set(re.findall(r'\[(\d+)\]\(#ref\d+\)', body))
-    ref_anchors = set(re.findall(r'<a id="ref(\d+)"></a>', new_content))
-    missing_in_refs = body_refs - ref_anchors
-    orphan_anchors = ref_anchors - body_refs
-    if missing_in_refs:
-        issues.append(f"Citations without matching reference: [{', '.join(sorted(missing_in_refs, key=int))}]")
-    if orphan_anchors:
-        # Orphan anchors are acceptable (might have more refs than citations used)
-        pass
-
     return {
         "passed": len(issues) == 0,
-        "changes": len(ordered),
+        "changes": len(ref_map),
         "output": output,
         "issues": issues,
         "citation_count": len(body_refs),
