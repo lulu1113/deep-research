@@ -72,9 +72,9 @@ def generate_metadata(word_count: int, reading_time: int, data_until: str,
                        chinese_wc: int = 0) -> dict:
     """Generate the two-line metadata block for report header."""
     version_str = f" · Skill版本：{skill_version}" if skill_version else ""
-    cn_str = f"（中文字数：{chinese_wc}）" if chinese_wc else ""
+    display_wc = chinese_wc if chinese_wc else word_count
     line1 = (
-        f"> **元数据**：总字数：{word_count}{cn_str} · 阅读时间：{reading_time} 分钟"
+        f"> **元数据**：总字数：{display_wc} 字 · 阅读时间：{reading_time} 分钟"
         f" · 数据截至：{data_until} · 生成时间：{generate_time}"
         f" · 调研模式：{depth_mode}{version_str}"
     )

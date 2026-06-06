@@ -227,9 +227,8 @@ def main():
             wordcount_path=args.wordcount,
             output_path=args.output)
         if result['passed']:
-            cn = result.get('chinese_word_count', 0)
-            cn_str = f", {cn} Chinese chars" if cn else ""
-            print(f"Report assembled: {result['output_path']} ({result['line_count']} lines, {result['chapter_count']} chapters, {result['word_count']} chars{cn_str})")
+            wc = result.get('chinese_word_count', 0) or result.get('word_count', 0)
+            print(f"Report assembled: {result['output_path']} ({result['line_count']} lines, {result['chapter_count']} chapters, {wc} Chinese chars)")
         _exit(result)
 
 
