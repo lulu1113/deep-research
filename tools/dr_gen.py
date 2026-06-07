@@ -150,11 +150,13 @@ def generate_refs(datapool_path: str, numbered: bool = False) -> dict:
         for i, (inst, yr, title, url) in enumerate(entries, 1):
             label = f"{title} · {inst}" + (f" · {yr}" if yr else "")
             lines.append(f"({i}) [{label}]({url})")
+        ref_text = '\n'.join(lines[:2]) + '\n\n' + '\n\n'.join(lines[2:])
     else:
         for inst, yr, title, url in entries:
             label = f"{title} · {inst}" + (f" · {yr}" if yr else "")
             lines.append(f"- [{label}]({url})")
-    return {"source_count": len(entries), "ref_lines": lines, "ref_text": '\n'.join(lines)}
+        ref_text = '\n'.join(lines)
+    return {"source_count": len(entries), "ref_lines": lines, "ref_text": ref_text}
 
 
 # ── Convert Citations to Numeric Index ────────────────────────────────────
@@ -222,19 +224,19 @@ def convert_citations(report_path: str, datapool_path: str, output_path: str = N
         if num_i < 1 or num_i > len(ref_map):
             issues.append(f"Body references ({num}) which has no data-pool entry")
 
-    # Build reference section
-    ref_lines = ["\n\n## 参考来源\n\n"]
+    # Build reference section (blank line between each entry for GFM rendering)
+    entry_lines = []
     for (inst, yr), num in sorted(ref_map.items(), key=lambda x: x[1]):
         title, url = pool_map.get((inst, yr), (inst, ''))
         label = title if title == inst else f"{title} · {inst}"
         label = label + (f" · {yr}" if yr else "")
         anchor = f'<a id="ref{num}"></a>'
         if url:
-            ref_lines.append(f'{anchor}({num}) [{label}]({url})')
+            entry_lines.append(f'{anchor}({num}) [{label}]({url})')
         else:
-            ref_lines.append(f'{anchor}({num}) {label}')
+            entry_lines.append(f'{anchor}({num}) {label}')
 
-    ref_text = '\n'.join(ref_lines)
+    ref_text = '\n\n## 参考来源\n\n\n' + '\n\n'.join(entry_lines)
 
     # Insert/replace ## 参考来源 section
     old_section = re.search(r'## 参考来源.*?(?=\n## |\Z)', content, re.DOTALL)
