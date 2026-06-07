@@ -47,8 +47,8 @@ Step 1b — 搜索引擎并行搜索
       webfetch(url="https://search.h33.top/search?q={URL编码的子问题描述}&format=json", timeout=20)
      从 JSON 响应的 results[].url 提取链接加入抓取队列
      ```
-     ⏳ 如果 time_anchor.mode != "relaxed"，为每子问题追加 1 轮年度专项搜索（query 尾部追加 `{time_anchor.target_year}`）
-     同时搜索争议话题的反方关键词
+      ⏳ 如果 time_anchor.mode != "relaxed"，为每子问题追加 1 轮年度专项搜索（query 尾部追加 `{time_anchor.target_year}`）
+      🔍 **反方关键词搜索**：从 outline.json 找出所有 `priority=="high"` 且 `counter_keywords` 非空（首元素不为 `""`）的子问题，将其 counter_keywords 作为额外搜索词，与主搜索一次性并行发出。结果存入该子问题的 `controversies` 数组。
 
    ☐ **exa_available=true**（仅在 searxng_available=false 时走此路径）→ Exa 搜索所有子问题
      对每个子问题（一次性并行发出全部）：
@@ -57,7 +57,7 @@ Step 1b — 搜索引擎并行搜索
      ```
      ⏳ 如果 time_anchor.mode != "relaxed"，为每子问题追加 1 轮年度专项搜索：
         websearch_web_search_exa(query="[问题描述] {time_anchor.target_year}", numResults=3-5)
-     同时搜索争议话题的反方关键词
+     🔍 **反方关键词搜索**：同上方 SearXNG 分支，找出 `priority=="high"` 且 `counter_keywords` 非空的子问题，将 counter_keywords 作为额外搜索词并行发出。结果存入该子问题的 `controversies` 数组。
 
    ☐ **all_search_unavailable=true** → 跳过 Step 1b，直接进入 Step 1.5
 
