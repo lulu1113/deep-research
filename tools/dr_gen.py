@@ -42,6 +42,16 @@ CHINESE_NUMERALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九
                     '十一', '十二', '十三', '十四', '十五']
 
 
+def _github_anchor(text: str) -> str:
+    """Generate GitHub-compatible anchor from heading text.
+    
+    GitHub strips all Chinese/ASCII punctuation, keeps CJK chars and digits.
+    """
+    punct = r'''，。、：；？！""''（）【】《》—…·,:;.!?()[]{}"'<>  '''
+    table = str.maketrans('', '', punct)
+    return text.translate(table).replace(' ', '-').lower()
+
+
 def generate_toc(outline_path: str) -> dict:
     """Generate single-level chapter TOC from outline.json."""
     with open(outline_path, 'r', encoding='utf-8') as f:
@@ -52,7 +62,7 @@ def generate_toc(outline_path: str) -> dict:
         prefix = CHINESE_NUMERALS[i] if i < len(CHINESE_NUMERALS) else str(i + 1)
         title = ch.get('title', '')
         label = f"{prefix}、{title}"
-        anchor = label.replace('、', '').replace(' ', '-')
+        anchor = _github_anchor(label)
         lines.append(f"- [{label}](#{anchor})")
     return {
         "chapter_count": len(chapters),
@@ -471,9 +481,13 @@ def assemble_report(outline_path: str, chapters_dir: str,
     for num, fpath in sorted(chapter_files):
         with open(fpath, 'r', encoding='utf-8') as f:
             content = f.read().strip()
-        # The chapter content should already have a # header; skip it
-        # Wrap in section block
-        chapter_texts.append(content)
+        # Strip any H2 heading the agent might have written (agents are told not to)
+        content = re.sub(r'^## .+?\n+', '', content, count=1)
+        # Prepend correct H2 heading from outline
+        prefix = CHINESE_NUMERALS[num - 1] if num - 1 < len(CHINESE_NUMERALS) else str(num)
+        ch_title = chapters[num - 1].get('title', '未知')
+        heading = f'## {prefix}、{ch_title}'
+        chapter_texts.append(f'{heading}\n\n{content}')
 
     # 6. Build report body first (without metadata — word count unknown yet)
     data_until = f"{target_year}年"
