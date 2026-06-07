@@ -29,7 +29,7 @@ python {TOOLSDIR}/dr_tools.py assemble-report \
 
 ## Step 2 — 引用格式转换（[N] → [(N)](#refN)）
 
-`assemble-report` 生成的报告正文使用 `[N]` 占位引用。运行 `convert-citations` 自动将其转换为可点击的 `[(N)](#refN)` 格式，并在尾部生成带锚点的参考来源列表：
+运行 `convert-citations` 将报告中的 `[N]` 引用转换为可点击的 `[(N)](#refN)` 格式，并在尾部生成带锚点的参考来源列表：
 
 ```bash
 python {TOOLSDIR}/dr_tools.py convert-citations \
