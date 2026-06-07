@@ -57,6 +57,9 @@ def main():
     p.add_argument('file')
     p = sub.add_parser('json-validate', help='Validate JSON')
     p.add_argument('file')
+    p = sub.add_parser('json-get', help='Read a value from JSON by dot-separated key path')
+    p.add_argument('file')
+    p.add_argument('key_path', help='e.g. "0.src" or "0.facts.0.src"')
     p = sub.add_parser('check-headers', help='Check ##/### header format')
     p.add_argument('file')
     p = sub.add_parser('check-chapter-numbers', help='Check ## Chinese numeral chapters')
@@ -142,6 +145,18 @@ def main():
         sys.exit(0)
     elif args.command == 'json-validate':
         _exit(json_validate(args.file))
+    elif args.command == 'json-get':
+        import json as _json
+        with open(args.file, 'r', encoding='utf-8') as _f:
+            _data = _json.load(_f)
+        _val = _data
+        for _key in args.key_path.split('.'):
+            if isinstance(_val, list):
+                _val = _val[int(_key)]
+            else:
+                _val = _val[_key]
+        print(_json.dumps(_val, ensure_ascii=False, indent=2) if not isinstance(_val, (str, int, float, bool)) else _val)
+        sys.exit(0)
     elif args.command == 'check-headers':
         _exit(check_headers(args.file))
     elif args.command == 'check-chapter-numbers':

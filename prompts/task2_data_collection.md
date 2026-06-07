@@ -13,7 +13,11 @@
 
 ## ⚠️ 工具使用铁律
 
-**禁止编写任何 Python 脚本**（`.py`）。所有可复用操作必须使用 `{TOOLSDIR}/dr_tools.py` 的子命令。如果遇到该脚本未覆盖的需求，在 task2_manifest.json 的 `gaps` 字段中记录"缺少命令：[描述]"，由主 agent 处理。
+**严禁编写内联代码**（禁止 `python -c "..."`、PowerShell 内联脚本、`bash -c` 等）。所有可复用操作必须使用 `{TOOLSDIR}/dr_tools.py` 的子命令：
+- JSON 取值 → `{TOOLSDIR}/dr_tools.py json-get <file> <key.path>`
+- 字数统计 → `{TOOLSDIR}/dr_tools.py word-count <file>`
+- 数据校验 → `{TOOLSDIR}/dr_tools.py check-datapool <file> --mode <mode>`
+如果遇到该脚本未覆盖的需求，在 task2_manifest.json 的 `gaps` 字段中记录"缺少命令：[描述]"，由主 agent 处理。
 
 ## 数据收集工作流（严格执行）
 

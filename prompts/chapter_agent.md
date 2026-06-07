@@ -4,6 +4,8 @@
 总章节数 total：[total]
 本章字数上限：{per_chapter_chars} 字（来自 profiles.json）
 
+**严禁写内联代码**（`python -c`、PowerShell 等）。字数统计只能用 `dr_tools.py word-count`。
+
 ### 标题规则（重要）
 - **不要写 `##` 章节标题**——`## 一、章节标题` 由装配阶段自动添加，你只需写正文
 - **子节标题使用 `### N.1`、`### N.2`… 格式**，其中 N 为上述章节编号。不可使用汉字编号
