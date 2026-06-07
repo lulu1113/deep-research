@@ -10,7 +10,7 @@
 |:----|:-----|:---------|
 | **章节约束** | quick 6-8 章 / standard 8-10 章 / deep 10-12 章 | 阶段1 oracle |
 | **可搜索性** | 每个子问题必须能通过 Search Router + 免费源（DuckDuckGo/Semantic Scholar/GDELT/Wikipedia）独立搜索 | 阶段1 oracle |
-| **免费源补强** | 所有搜索引擎结果不足时触发 Step 1.5，补强与 Step 2 抓取并行执行，新 URL 追加到下一轮抓取 | 阶段2 Step 1.5（并行） |
+| **免费源补强** | 所有搜索引擎结果不足时触发 Step 3，补强与 Step 4 抓取并行执行，新 URL 追加到下一轮抓取 | 阶段2 Step 3（并行） |
 | **对比视角** | 至少 1 个反方观点子问题 | 阶段1 oracle |
 | **子节结构完整性** | Oracle 必须为每章定义 sections[]，deep 3-6 节，standard 2-4 节，quick 1-2 节 | 阶段1 oracle |
 
@@ -18,7 +18,7 @@
 
 | 规则 | 说明 | 在哪拦截 |
 |:----|:-----|:---------|
-| **Scrapling 为默认抓取工具** | 安装环节已确保 Scrapling 就绪，Task 2 直接使用 Scrapling 批量抓取；单 URL 失败则回退 webfetch | ⚡ 阻断点（Step 2→数据池构建） |
+| **Scrapling 为默认抓取工具** | 安装环节已确保 Scrapling 就绪，Task 2 直接使用 Scrapling 批量抓取；单 URL 失败则回退 webfetch | ⚡ 阻断点（Step 4→Step 5） |
 | **结构化事实** | 数据池使用 JSON facts[] 数组格式，非散装文本 | 阶段2 输出 |
 | **跨源矛盾标记** | 不同来源矛盾数据在 controversies[] 数组中对齐 | 阶段2 数据池 |
 | **来源稀缺** | 连续 3 不同域名 404 → 2 分钟上限 | 阶段2 |
