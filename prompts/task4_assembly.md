@@ -10,7 +10,7 @@
 
 ## ⚠️ 工具使用铁律
 
-**禁止编写任何 Python 脚本**（`.py`）。装配、引用转换、QA 检查必须使用 `{TOOLSDIR}/dr_tools.py` 的子命令。如果遇到该脚本未覆盖的需求，在 task5_manifest.json 的 `"notes"` 字段中记录"缺少命令：[描述]"，由主 agent 处理。
+**禁止编写任何 Python 脚本**（`.py`）。装配、引用转换、QA 检查必须使用 `{TOOLSDIR}/dr_tools.py` 的子命令。如果遇到该脚本未覆盖的需求，在 task4_manifest.json 的 `"notes"` 字段中记录"缺少命令：[描述]"，由主 agent 处理。
 
 ## Step 1 — 装配
 
@@ -27,9 +27,9 @@ python {TOOLSDIR}/dr_tools.py assemble-report \
 ```
 （`案例报告/` 为默认输出目录，`--output` 可指定其他目录；脚本自动根据报告标题+日期生成文件名）
 
-## Step 1a — 引用格式转换（（机构，年份）→ [N]）
+## Step 2 — 引用格式转换（[N] → [(N)](#refN)）
 
-`assemble-report` 生成的报告正文使用 `（机构，年份）` 内联引用。运行 `convert-citations` 自动将其替换为 `[N]` 数字索引格式，并在尾部生成带超链接的参考来源列表：
+`assemble-report` 生成的报告正文使用 `[N]` 占位引用。运行 `convert-citations` 自动将其转换为可点击的 `[(N)](#refN)` 格式，并在尾部生成带锚点的参考来源列表：
 
 ```bash
 python {TOOLSDIR}/dr_tools.py convert-citations \
@@ -39,8 +39,8 @@ python {TOOLSDIR}/dr_tools.py convert-citations \
 （`--output` 可指定另存路径，不指定则原地替换）
 
 转换后效果：
-- 正文：`据报告显示[1]，2026年市场规模达XX亿元[2]。`
-- 尾部：`## 参考来源\n\n[1] [文章标题 · 机构 · 2026](URL)\n[2] ...`（URL 隐藏为可点击链接，不显示裸网址）
+- 正文：`据报告显示[(1)](#ref1)，2026年市场规模达XX亿元[(2)](#ref2)。`
+- 尾部：`## 参考来源\n\n(1) [文章标题 · 机构 · 2026](URL)\n(2) ...`（URL 隐藏为可点击链接，不显示裸网址）
 
 装配前请自行确认以下参数：
 - `depth_mode`：从 outline.json 读取
@@ -50,7 +50,7 @@ python {TOOLSDIR}/dr_tools.py convert-citations \
 - `data_limited`：如为 true，报告开头追加醒目标注 `> ⚠️ **数据说明**：本次调研数据来源较为有限（共引用 N 个来源），部分结论基于有限样本，仅供参考。`，并将 QA 的年份密度和段落达标标准各降低 30%
 - **总字数在装配后自动计算**，无需提前准备
 
-## Step 2 — QA 验收
+## Step 3 — QA 验收
 
 先运行全量自动化检查：
 ```
@@ -88,7 +88,7 @@ python {TOOLSDIR}/dr_tools.py year-density <报告> --target-year N # 年份
 字数超标 → 用 `word-count` 获取精确字数，对比 `profiles.json` 中当前模式的 `max_chars`。**不阻塞**，在 manifest 中标记 `word_count_exceeded: true` 即可，最终汇报时一并显示。
 其他项不达标 → 局部补刀（单章重写，最多 1 次）。
 
-## Step 3 — 清理
+## Step 4 — 清理
 
 ☐ 清理中间文件：`rm -rf {TMPDIR}/chapters/ {TMPDIR}/task*_manifest.json {TMPDIR}/outline.json {TMPDIR}/data-pool.json {TMPDIR}/start_time.txt {TMPDIR}/cautions.json`（Unix）或 `Remove-Item -Recurse -Force`（Windows）
 ☐ 确认 tool-output/ 中无残留临时文件
@@ -97,13 +97,13 @@ python {TOOLSDIR}/dr_tools.py year-density <报告> --target-year N # 年份
 
 完成装配和 QA。
 
-### 输出 task5_manifest.json
+### 输出 task4_manifest.json
 
-使用 `write` 工具创建 `{TMPDIR}/task5_manifest.json`，写入以下 JSON：
+使用 `write` 工具创建 `{TMPDIR}/task4_manifest.json`，写入以下 JSON：
 
 ```json
 {
-  "task": 5,
+  "task": 4,
   "report_path": "最终报告路径",
   "line_count": 696,
   "chapter_count": 10,

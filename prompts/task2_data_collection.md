@@ -48,19 +48,18 @@ Step 2 — 搜索引擎并行搜索
    ☐ **searxng_available=true** → SearXNG 搜索所有子问题
      对 outline.json 中每个子问题，并行发出 webfetch 调用（一次发起全部，不逐个等待）：
      ```
-      webfetch(url="https://search.h33.top/search?q={URL编码的子问题描述}&format=json", timeout=20)
+      webfetch(url="https://search.h33.top/search?q={URL编码的子问题描述} {time_anchor.target_year}&format=json", timeout=20)
      从 JSON 响应的 results[].url 提取链接加入抓取队列
      ```
-      ⏳ 如果 time_anchor.mode != "relaxed"，为每子问题追加 1 轮年度专项搜索（query 尾部追加 `{time_anchor.target_year}`）
+      📌 `{time_anchor.target_year}` 已合并到主 query 中，无需单独发年度专项搜索
       🔍 **反方关键词搜索**：从 outline.json 找出所有 `priority=="high"` 且 `counter_keywords` 非空（首元素不为 `""`）的子问题，将其 counter_keywords 作为额外搜索词，与主搜索一次性并行发出。结果存入该子问题的 `controversies` 数组。
 
    ☐ **exa_available=true**（仅在 searxng_available=false 时走此路径）→ Exa 搜索所有子问题
      对每个子问题（一次性并行发出全部）：
      ```
-     websearch_web_search_exa(query="[问题描述]", numResults=5-8)
+     websearch_web_search_exa(query="[问题描述] {time_anchor.target_year}", numResults=5-8)
      ```
-     ⏳ 如果 time_anchor.mode != "relaxed"，为每子问题追加 1 轮年度专项搜索：
-        websearch_web_search_exa(query="[问题描述] {time_anchor.target_year}", numResults=3-5)
+     📌 `{time_anchor.target_year}` 已合并到主 query 中，无需单独发年度专项搜索
      🔍 **反方关键词搜索**：同上方 SearXNG 分支，找出 `priority=="high"` 且 `counter_keywords` 非空的子问题，将 counter_keywords 作为额外搜索词并行发出。结果存入该子问题的 `controversies` 数组。
 
    ☐ **all_search_unavailable=true** → 跳过 Step 2，直接进入 Step 3
@@ -219,9 +218,8 @@ Step 6 — 输出数据池 + 数据质检
     ☐ **虚假平滑**：怀疑完美递增/递减趋势数据（可能为插值伪造）
     ☐ **来源混淆**：确认指标口径匹配（出货量 vs 零售量、营收 vs 利润等）
     → 发现问题在 cautions.json 中记录，不阻塞流程
-☐ **缺口处理**：priority=high 但 facts < 2 的子问题 → **补搜**（精确补缺该子问题，3 次 SearXNG 搜索或 webfetch 回退，最多 1 轮）
-    ☐ 根据检查结果标记 `data_limited`（独立来源 < 8 或总事实 < 30 时标记 true）。
-    ☐ **兜底**：如果脚本反复报错无法通过，用以下命令手动提取 count（放弃脚本统计改为手动）：
+☐ 根据检查结果标记 `data_limited`（独立来源 < 8 或总事实 < 30 时标记 true）。
+☐ **兜底**：如果脚本反复报错无法通过，用以下命令手动提取 count（放弃脚本统计改为手动）：
        ```
        python -c "import json; d=json.load(open('{TMPDIR}/data-pool.json')); src=set(); [src.update(r['src']) for r in d]; print('source_count:', len(src)); print('fact_count:', sum(len(r['facts']) for r in d))"
        ```
@@ -234,6 +232,16 @@ Step 6 — 输出数据池 + 数据质检
 {"passed": true, "cautions": [{"sub_question_index": 3, "fact_index": 1, "type": "来源存疑", "detail": "自媒体来源"}]}
 ```
 
+### fetch_method 判定
+
+manifest 中的 `fetch_method` 字段根据 Step 4 的实际抓取情况填写：
+
+| 情况 | fetch_method 值 |
+|:----|:--------------|
+| Scrapling 全部成功 | `🔧 Scrapling` |
+| 部分 URL 回退 webfetch | `🔧 Scrapling（N 个回退）` |
+| Scrapling 完全不可用，全部走 webfetch | `🌐 webfetch` |
+
 ## 硬规则
 1. **搜索引擎优先级**：SearXNG（自建 Layer 1 主力）→ Exa（Layer 2 冷备）→ 免费源补强（Layer 3 兜底）。检测通过即用，不继续探测下级引擎。
 2. **年份时效（默认强制）**：`time_anchor.mode != "relaxed"` 时，search_keywords 必须含 `{target_year}`；`user_specified` 时用用户指定年份替代 `{target_year}`
@@ -245,7 +253,7 @@ Step 6 — 输出数据池 + 数据质检
 
 ## 作业
 1. 完成 SearXNG/Exa + Scrapling/webfetch 数据收集 + 数据池提取
-2. quality check + 预检（来源可信度/乱码/一致性）
+2. Step 6 数据质检（来源可信度/乱码/一致性/Adversarial 检查）
 3. 清理 tool-output/ 中的中间文件
 4. 使用 `write` 工具创建 `{TMPDIR}/cautions.json`：
 ```json

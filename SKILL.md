@@ -69,8 +69,7 @@ risk: medium
     → 读取 {PROMPTSDIR}/task1_oracle.md，替换 {TMPDIR} {TOOLSDIR}，注入 prompt
     → 等待返回 oracle 回答（不写文件，只输出 JSON 内容）
     → 从回答中提取 outline.json 内容，用 `write` 工具创建 {TMPDIR}/outline.json
-    → 从回答中提取 manifest 内容，用 `write` 工具创建 {TMPDIR}/task1_manifest.json
-    → 读取 {TMPDIR}/task1_manifest.json，提取 title + chapter_count
+    → 从 outline.json 读取 title + chapter_count
     → todowrite 标记完成
     → 向用户报告进度（"大纲已生成，N 章"）
  6. ══ Task 2 — 数据收集 + 结构化数据池 ══
@@ -98,8 +97,7 @@ risk: medium
     → **Step 2 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
     → **Step 3 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，在报告标题后插入数据说明声明。
     → **Step 4 — 引用处理**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`（从 data-pool 构建参考章节，验证正文 `[N]` 引用均有对应条目）
-    → **Step 5 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出的 passed 字段
-    → 使用 `write` 工具创建 {TMPDIR}/task4_manifest.json（含 qa_passed 结果）
+    → **Step 5 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year}`，读取 JSON 输出的 passed + line_count + word_count 字段
     → todowrite 标记完成
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值，不可跳过）：
       ```
@@ -107,11 +105,11 @@ risk: medium
       $end = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
       $totalMin = [math]::Round(([datetime]$end - [datetime]$start).TotalMinutes)
       ```
-    → 从各 manifest 提取数据，按固定模板汇报最终结果（缺失任一字段即标为失败）：
+    → 从 outline.json + task2_manifest.json + qa-report 输出中提取数据，按固定模板汇报最终结果：
       ```
-      📋 大纲已生成：{task1_manifest.title} · {task1_manifest.chapter_count} 章 · {outline.json.depth_mode}
+      📋 大纲已生成：{outline.title} · {outline.chapter_count} 章 · {outline.depth_mode}
       📡 数据已收集：{task2_manifest.source_count} 个来源 · {task2_manifest.fact_count} 条事实 · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
-      📄 报告已生成：{task4_manifest.report_path} · {task4_manifest.line_count} 行 · {task4_manifest.chapter_count} 章 · {task4_manifest.word_count} 字 · ⏱ {totalMin} 分钟 · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
+      📄 报告已生成：{REPORT} · {qa_report.line_count} 行 · {outline.chapter_count} 章 · {qa_report.word_count} 字 · ⏱ {totalMin} 分钟 · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
       ```
     → todowrite 全部完成
 
@@ -154,7 +152,7 @@ risk: medium
 - `{TMPDIR}` → 运行时临时目录
 - `{TOOLSDIR}` → tools 目录
 
-**输出**：{TMPDIR}/chapters/chapter-{N}.md + {TMPDIR}/chapters/chapter-{N}-manifest.json（使用 `write` 工具创建）
+**输出**：{TMPDIR}/chapters/chapter-{N}.md（使用 `write` 工具创建）
 
 ---
 
