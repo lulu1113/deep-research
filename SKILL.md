@@ -129,11 +129,20 @@ repository: https://github.com/hoolulu/deep-research
     → **Step 5 — QA**：`python {TOOLSDIR}/dr_tools.py qa-report "$REPORT" --mode {depth_mode} --target-year {target_year} --lang $LANG`，读取 JSON 输出的 passed + line_count + word_count 字段
     → todowrite 标记完成
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值）
-    → 从 outline.json + task2_manifest.json + qa-report 中提取数据，按固定模板汇报最终结果。**模板中的标签必须根据 $LANG 翻译**（en→"chapters/sources/chars/minutes", zh→"章/个/字/分钟"）：
+    → 从 outline.json + task2_manifest.json + qa-report 中提取数据，使用 $LANG 语言汇报最终结果。
+      **所有标签必须翻译成 $LANG 语言**（outline/data/report/chapters/sources/facts/lines/chars/min 以及章节列表标题）。
+      例如 $LANG=fr → Plan/Données/Rapport/chapitres/sources/faits/lignes/caractères/min；$LANG=ja → 概要/データ/レポート/章/ソース/件/行/文字/分；以此类推。
+      严格按以下结构输出（<> 内替换为 $LANG 翻译后的词）：
+
       ```
-      📋 大纲已生成 / Outline：{outline.title} · {outline.chapter_count} 章/chapters · {outline.depth_mode}
-      📡 数据已收集 / Data：{task2_manifest.source_count} 个来源/sources · {task2_manifest.fact_count} 条事实/facts · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
-      📄 报告已生成 / Report：{REPORT} · {qa_report.line_count} 行/lines · {outline.chapter_count} 章/chapters · {qa_report.word_count} 字/chars · ⏱ {totalMin} 分钟/min · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
+      📋 <Outline词>：{outline.title} · {outline.chapter_count} <章词> · {outline.depth_mode}
+      📡 <Data词>：{task2_manifest.source_count} <来源词> · {task2_manifest.fact_count} <事实词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
+      📄 <Report词>：{REPORT} · {qa_report.line_count} <行词> · {outline.chapter_count} <章词> · {qa_report.word_count} <字词> · ⏱ {totalMin} <分钟词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
+
+      <章节列表标题，用 $LANG 翻译>：
+      1. {各章标题} — {各章描述}
+      2. {各章标题} — {各章描述}
+      ...
       ```
     → todowrite 全部完成
 
