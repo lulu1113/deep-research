@@ -4,7 +4,7 @@
 
 **深度调研报告生成 Skill · 支持 19 种语言输出**
 
-> **当前版本：** 见 `[VERSION](VERSION)` · [查看更新](https://github.com/hoolulu/deep-research/commits/main)
+> **当前版本：** [查看更新](https://github.com/hoolulu/deep-research/commits/main)
 
 ---
 

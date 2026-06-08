@@ -4,7 +4,7 @@
 
 **Professional deep research report generation Skill · Supports 19 languages**
 
-> **Current version:** See `[VERSION](VERSION)` · [View updates](https://github.com/hoolulu/deep-research/commits/main)
+> **Current version:** [View updates](https://github.com/hoolulu/deep-research/commits/main)
 
 ---
 
