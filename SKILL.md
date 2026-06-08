@@ -168,9 +168,11 @@ repository: https://github.com/hoolulu/deep-research
 
 **工具**：`task(category="unspecified-high", load_skills=[], ...)`
 **prompt 文件**：`prompts/task2_data_collection.md`
-**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR}` 为实际路径后注入 prompt。
+**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR}` `{LANG}` `{COUNTRY}` 为实际值后注入 prompt。
 
 **输出**：{TMPDIR}/data-pool.json + {TMPDIR}/task2_manifest.json（使用 `write` 工具创建）
+
+**LANG→COUNTRY 映射**（用于替换 `{COUNTRY}`）：zh→CN, en→US, ru→RU, ja→JP, ko→KR, fr→FR, de→DE, es→ES, pt→PT, it→IT, nl→NL, sv→SE, pl→PL, id→ID, th→TH, tr→TR, vi→VN, ar→SA, hi→IN。未覆盖的语言用空字符串。
 
 ---
 

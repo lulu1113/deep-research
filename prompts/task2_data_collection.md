@@ -3,6 +3,7 @@
 ## 优化说明
 - Step 3（补强）与 Step 4（Scrapling 抓取）并行执行，不串行等待
 - Step 5（数据提取）按子问题并行，非一次性全量处理
+- **搜索源语言过滤**：根据 {LANG} 决定搜索源——{LANG}=zh 时使用全部来源；其他语言跳过中文专用站（cn.bing.com、搜狗、360、B类国内源），对通用搜索引擎加 locale 参数，对特定语言启用区域引擎（详见各步骤说明）
 
 ## 输入
 - 大纲文件：{TMPDIR}/outline.json
@@ -78,36 +79,46 @@ Step 3 — 免费数据源补强（与 Step 4 并行）
    ```
 
    **检测 2 — A 类搜索引擎搜索** (每个 timeout=8s，全部同时发出，不分条件)
-    对所有子问题（同一个 query 模板，替换不同关键词），一次性发出：
-     ```
-     webfetch(url="https://lite.duckduckgo.com/lite/?q={query}", timeout=8)
-     webfetch(url="https://cn.bing.com/search?q={query}", timeout=8)
-     webfetch(url="https://search.brave.com/search?q={query}", timeout=8)
-     webfetch(url="https://www.mojeek.com/search?q={query}", timeout=8)
-     webfetch(url="https://www.sogou.com/web?query={query}", timeout=8)
-     webfetch(url="https://www.so.com/s?q={query}", timeout=8)
-     webfetch(url="https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=5", timeout=8)
-     webfetch(url="https://api.gdeltproject.org/api/v2/doc/doc?query={query}&mode=artlist&maxrecords=8", timeout=8)
-     webfetch(url="https://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=5", timeout=8)
-     ```
-   ⚠️ 某个搜索引擎超时/失败 → 跳过它，不影响其他。不要把失败的源从后续步骤中移除。
+    对所有子问题（同一个 query 模板，替换不同关键词），一次性发出。
+    **语言规则**：通用引擎和学术引擎始终发出；中文专用引擎仅 {LANG}=zh 时发出；其他语言对通用引擎加 locale 参数：
+      ```
+      # 始终发出（通用/学术）
+      webfetch(url="https://lite.duckduckgo.com/lite/?q={query}", timeout=8)
+      webfetch(url="https://search.brave.com/search?q={query}&country={COUNTRY}", timeout=8)
+      webfetch(url="https://www.mojeek.com/search?q={query}&lang={LANG}", timeout=8)
+      webfetch(url="https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=5", timeout=8)
+      webfetch(url="https://api.gdeltproject.org/api/v2/doc/doc?query={query}&mode=artlist&maxrecords=8", timeout=8)
+      webfetch(url="https://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=5", timeout=8)
 
-   **检测 3 — B 类国内源搜索** (timeout=10s，全部同时发出)
-    对每个子问题，构造以下搜索 URL 并用 `scrapling_bulk_get(urls=[全部B类URL], timeout=10, extraction_type="markdown")` **一次性批量抓取**（不逐个调用）：
-    | 源 | 搜索 URL 模板 | 说明 |
-    |:----|:-------------|:------|
-     | 百度百科 | `https://baike.baidu.com/item/{URL编码的词条名}` | 先搜索词条名，再拼 URL |
-     | 维基百科 | `https://zh.wikipedia.org/wiki/{URL编码的词条名}` | 先搜索词条名 |
-     | 知乎 | `https://www.zhihu.com/search?type=content&q={query}` | 中文问答/分析 |
-     | 36氪 | `https://36kr.com/search/articles/{query}` | 科技/商业新闻 |
-     | 澎湃新闻 | `https://www.thepaper.cn/search?keyword={query}` | 深度新闻/调查 |
-     | 199IT | `https://www.199it.com/?s={query}` | 中文行业数据 |
-     | 艾瑞咨询 | `https://report.iresearch.cn/search.aspx?key={query}` | 行业研究报告 |
-     | 东方财富 | `https://so.eastmoney.com/news/s?keyword={query}` | 金融/市场数据 |
-     | 微博搜索 | `https://s.weibo.com/weibo?q={query}` | 社情民意/热点追踪 |
-     | 虎嗅 | `https://www.huxiu.com/search.html?q={query}` | 科技商业深度 |
-     | CSDN | `https://so.csdn.net/so/search?q={query}` | 中文技术内容 |
-     | 豆瓣 | `https://www.douban.com/search?q={query}` | 文化/影音/书籍评价 |
+      # 仅在 {LANG}=zh 时发出（中文专用）
+      webfetch(url="https://cn.bing.com/search?q={query}", timeout=8)
+      webfetch(url="https://www.sogou.com/web?query={query}", timeout=8)
+      webfetch(url="https://www.so.com/s?q={query}", timeout=8)
+      ```
+    **{COUNTRY} 对照表**：zh→CN, en→US, ru→RU, ja→JP, ko→KR, fr→FR, de→DE, es→ES, pt→PT, it→IT, nl→NL, sv→SE, pl→PL, id→ID, th→TH, tr→TR, vi→VN, ar→SA, hi→IN。未在表中的语言默认空字符串（不加 country 参数）。
+    **区域专用引擎**（{LANG}=ru 时加 Yandex，{LANG}=ja 时加 Yahoo JP）：
+      ```
+      webfetch(url="https://yandex.ru/search/?text={query}&lr=225", timeout=8)        # 仅 ru
+      webfetch(url="https://search.yahoo.co.jp/search?p={query}", timeout=8)            # 仅 ja
+      ```
+    ⚠️ 某个搜索引擎超时/失败 → 跳过它，不影响其他。不要把失败的源从后续步骤中移除。
+
+   **检测 3 — B 类国内源搜索**（{LANG}=zh 时启用，其他语言跳过）
+    ⚠️ 本步骤仅在 {LANG}=zh 时执行。{LANG} 不为 zh 时**跳过所有 B 类源**。
+    timeout=10s，全部同时发出。对每个子问题，构造以下搜索 URL 并用 `scrapling_bulk_get(urls=[全部B类URL], timeout=10, extraction_type="markdown")` **一次性批量抓取**（不逐个调用）：
+     | 源 | 搜索 URL 模板 | 说明 |
+     |:----|:-------------|:------|
+      | 百度百科 | `https://baike.baidu.com/item/{URL编码的词条名}` | 先搜索词条名，再拼 URL |
+      | 知乎 | `https://www.zhihu.com/search?type=content&q={query}` | 中文问答/分析 |
+      | 36氪 | `https://36kr.com/search/articles/{query}` | 科技/商业新闻 |
+      | 澎湃新闻 | `https://www.thepaper.cn/search?keyword={query}` | 深度新闻/调查 |
+      | 199IT | `https://www.199it.com/?s={query}` | 中文行业数据 |
+      | 艾瑞咨询 | `https://report.iresearch.cn/search.aspx?key={query}` | 行业研究报告 |
+      | 东方财富 | `https://so.eastmoney.com/news/s?keyword={query}` | 金融/市场数据 |
+      | 微博搜索 | `https://s.weibo.com/weibo?q={query}` | 社情民意/热点追踪 |
+      | 虎嗅 | `https://www.huxiu.com/search.html?q={query}` | 科技商业深度 |
+      | CSDN | `https://so.csdn.net/so/search?q={query}` | 中文技术内容 |
+      | 豆瓣 | `https://www.douban.com/search?q={query}` | 文化/影音/书籍评价 |
 
    ### Step 3b — 结果汇聚（Step 3a 全部返回后）
 

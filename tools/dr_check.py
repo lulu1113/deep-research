@@ -102,7 +102,7 @@ def check_headers(filepath: str, lang: str = "zh") -> dict:
         stripped = line.rstrip('\n\r')
         if cfg['check']['ch_has_number_check']:
             # non-zh: ## headers SHOULD start with number
-            if re.match(r'^## (?!Table of Contents|目录|目录|References|参考来源|参照元|Referencias|Réf|Quellen|Fonti|Bronnen|Källor|Источники|المصادر|स्रोत|Nguồn|Kaynaklar|Źródła|Disclaimer|免责|Descargo|Avertissement|Haftungsausschluss|Isenção|Dichiarazione|Vrijwaring|Ansvarsfriskrivning|Отказ|إخلاء|अस्वीकरण|Tuyên bố|Penyangkalan|ข้อจำกัด|Sorumluluk|Zrzeczenie)', stripped) and not re.match(r'^## \d+\.', stripped):
+            if re.match(r'^## (?!Table of Contents|目录|目录|Inhaltsverzeichnis|References|参考来源|参照元|Referencias|Réf|Quellen|Fonti|Bronnen|Källor|Источники|المصادر|स्रोत|Nguồn|Kaynaklar|Źródła|Disclaimer|免责|Descargo|Avertissement|Haftungsausschluss|Isenção|Dichiarazione|Vrijwaring|Ansvarsfriskrivning|Отказ|إخلاء|अस्वीकरण|Tuyên bố|Penyangkalan|ข้อจำกัด|Sorumluluk|Zrzeczenie)', stripped) and not re.match(r'^## \d+\.', stripped):
                 issues.append(f"Line {i + 1}: ## header should start with number: '{stripped[:60]}'")
         else:
             # zh: ## headers should NOT contain arabic numeral
