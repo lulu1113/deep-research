@@ -241,6 +241,9 @@ def check_datapool(filepath: str, mode: str) -> dict:
             for field in fact_required:
                 if field not in fact:
                     issues.append(f"Record {i} fact {j}: missing '{field}'")
+            url_val = fact.get('url')
+            if not url_val or not str(url_val).strip():
+                issues.append(f"Record {i} fact {j}: 'url' is empty or null")
             if mode == 'quick':
                 if 'cur' in fact:
                     issues.append(f"Record {i} fact {j}: quick mode should not have 'cur'")
@@ -338,6 +341,48 @@ def validate_chapter(filepath: str, expected_sections: int = 0) -> dict:
     results['passed'] = all(checks)
     
     return results
+
+
+# ── Batch Chapter Validation (Parallel) ───────────────────────────────────
+
+def validate_all_chapters(chapters_dir: str, chapter_count: int, expected_sections: int = 0) -> dict:
+    """Validate all chapters in parallel using ThreadPoolExecutor.
+
+    Returns aggregated results with per-chapter pass/fail status.
+    Failed chapters are listed separately for targeted regeneration.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=min(chapter_count, 8)) as ex:
+        futures = {}
+        for i in range(1, chapter_count + 1):
+            path = os.path.join(chapters_dir, f"chapter-{i}.md")
+            if not os.path.exists(path):
+                results[i] = {"passed": False, "error": f"chapter-{i}.md not found"}
+                continue
+            futures[ex.submit(validate_chapter, path, expected_sections)] = i
+
+        for fut in as_completed(futures):
+            chapter_num = futures[fut]
+            try:
+                result = fut.result()
+                results[chapter_num] = result
+            except Exception as e:
+                results[chapter_num] = {"passed": False, "error": str(e)}
+
+    sorted_results = {k: results[k] for k in sorted(results.keys())}
+    failed_chapters = {str(num): r for num, r in sorted_results.items()
+                       if not r.get('passed', False)}
+
+    return {
+        "passed": len(failed_chapters) == 0,
+        "total": chapter_count,
+        "passed_count": chapter_count - len(failed_chapters),
+        "failed_count": len(failed_chapters),
+        "results": sorted_results,
+        "failed_chapters": failed_chapters,
+    }
 
 
 # ── Full QA Report ────────────────────────────────────────────────────────

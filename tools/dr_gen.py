@@ -133,7 +133,7 @@ def generate_refs(datapool_path: str, numbered: bool = False) -> dict:
     entries = []
     for rec in records:
         for fact in rec.get('facts') or []:
-            url = fact.get('url', '').strip()
+            url = (fact.get('url') or '').strip()
             inst = fact.get('src', '').strip()
             yr = fact.get('yr', '')
             title = fact.get('title', '').strip()
@@ -169,6 +169,34 @@ def _read_json_handle_bom(path: str):
     """Read JSON file, auto-handling UTF-8 BOM."""
     with open(path, 'r', encoding=_UTF8_SIG) as f:
         return json.load(f)
+
+
+# ── Search Engine Detection ─────────────────────────────────────────────────
+
+def detect_engine() -> dict:
+    """Detect available search engine. Tests SearXNG via HTTP GET.
+
+    Exa is an OpenCode-internal tool (not a Python API), so it must be
+    tested by the LLM sub-agent. This script only covers SearXNG.
+    """
+    import json as _json
+    import urllib.request as _req
+    import urllib.error as _err
+
+    try:
+        r = _req.Request(
+            "https://search.h33.top/search?q=test&format=json",
+            headers={"User-Agent": "Mozilla/5.0"},
+            method="GET",
+        )
+        with _req.urlopen(r, timeout=15) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
+            if isinstance(data, dict) and "results" in data:
+                return {"engine": "searxng", "available": True}
+    except Exception:
+        pass
+
+    return {"engine": "none", "available": False}
 
 
 def convert_citations(report_path: str, datapool_path: str, output_path: str = None) -> dict:

@@ -21,18 +21,18 @@
 
 ## 数据收集工作流（严格执行）
 
-Step 1 — 搜索引擎健康检测（串行，优先→备用）
+Step 1 — 搜索引擎健康检测
 
-   按优先级依次检测，通过即用，不继续检测下级引擎：
+   先运行脚本探测 SearXNG，如不可用再手动检测 Exa：
 
-   Layer 1 — SearXNG（自建元搜索引擎，1 次 GET，15s timeout）：
+   **Layer 1 — SearXNG**（通过脚本自动检测）：
    ```
-   webfetch(url="https://search.h33.top/search?q=test&format=json", timeout=15)
+   python {TOOLSDIR}/dr_tools.py detect-engine
    ```
-   ☐ JSON 返回且有 `results` 数组 → `searxng_available=true`，跳过 Layer 2
-   ☐ 超时/空结果/非 JSON → 继续 Layer 2
+   ☐ 输出 `{"engine": "searxng", "available": true}` → `searxng_available=true`，跳过 Layer 2
+   ☐ 输出 `{"engine": "none", "available": false}` → `searxng_available=false`，继续 Layer 2
 
-   Layer 2 — Exa（1 次空查询，仅当 SearXNG 不可用时）：
+   **Layer 2 — Exa**（仅当 SearXNG 不可用时）：
    ```
    websearch_web_search_exa(query="test health check 2026", numResults=1)
    ```

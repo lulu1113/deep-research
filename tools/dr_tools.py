@@ -11,13 +11,14 @@ from dr_check import (
     check_encoding, word_count, json_validate,
     check_headers, check_chapter_numbers, check_metadata,
     check_toc, check_tail, year_density, check_datapool,
-    validate_chapter, qa_report,
+    validate_chapter, validate_all_chapters, qa_report,
 )
 from dr_gen import (
     extract_sources, generate_toc, generate_metadata,
     generate_refs, map_chapters,
     write_json, write_md,
     prepare_chapter, assemble_report, convert_citations,
+    detect_engine,
 )
 
 
@@ -80,6 +81,10 @@ def main():
     p = sub.add_parser('validate-chapter', help='Single-command: all chapter checks at once')
     p.add_argument('file')
     p.add_argument('--expected-sections', type=int, default=0)
+    p = sub.add_parser('validate-all-chapters', help='Parallel batch chapter validation')
+    p.add_argument('--chapters-dir', required=True)
+    p.add_argument('--chapters', type=int, required=True)
+    p.add_argument('--expected-sections', type=int, default=0)
     p = sub.add_parser('qa-report', help='Full report quality check')
     p.add_argument('file')
     p.add_argument('--mode', choices=['quick', 'standard', 'deep'], required=True)
@@ -125,6 +130,7 @@ def main():
     p.add_argument('--chapter', type=int, required=True)
     p.add_argument('--total', type=int, default=1)
     p.add_argument('--mode', choices=['quick', 'standard', 'deep'], default='standard')
+    p = sub.add_parser('detect-engine', help='Detect available search engine')
     p = sub.add_parser('assemble-report', help='Assemble final report from chapters + metadata')
     p.add_argument('--outline', required=True)
     p.add_argument('--chapters-dir', required=True)
@@ -175,6 +181,10 @@ def main():
         result = validate_chapter(args.file, expected_sections=args.expected_sections)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         sys.exit(0)
+    elif args.command == 'validate-all-chapters':
+        result = validate_all_chapters(args.chapters_dir, args.chapters, args.expected_sections)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        sys.exit(0 if result['passed'] else 1)
     elif args.command == 'qa-report':
         result = qa_report(args.file, mode=args.mode, target_year=args.target_year)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -225,6 +235,12 @@ def main():
         _exit(write_json(args.filepath))
     elif args.command == 'write-md':
         _exit(write_md(args.filepath))
+
+    # ── Dispatch: engine ──
+    elif args.command == 'detect-engine':
+        result = detect_engine()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        sys.exit(0)
 
     # ── Dispatch: skeleton + assembly ──
     elif args.command == 'prepare-chapter':

@@ -73,8 +73,9 @@ risk: medium
     → todowrite 标记完成
     → 向用户报告进度（"大纲已生成，N 章"）
  6. ══ Task 2 — 数据收集 + 结构化数据池 ══
-    → 读取 {PROMPTSDIR}/task2_data_collection.md，替换 {TMPDIR} {TOOLSDIR}，注入 prompt
-    → 等待返回 data-pool.json 路径
+    → 读取 {PROMPTSDIR}/task2_data_collection.md，替换变量后注入 prompt
+    → 派发 task()，等待返回
+    → 如失败（task 报错或 task2_manifest.json 不存在），**自动重试 1 次**，重新派发。第二次仍失败则向用户报告并终止
     → 读取 {TMPDIR}/task2_manifest.json，提取 source_count + fact_count + search_engine + fetch_method
     → todowrite 标记完成
     → 向用户报告进度（"数据已收集，N 个来源，{search_engine}，{fetch_method}"）
@@ -93,7 +94,8 @@ risk: medium
     → todowrite 标记完成（每完成一章标记一个子项）
     → 向用户报告进度（"N 章撰写完成，进入验证"）
  8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
-    → **Step 1 — 逐章验证**：对所有章节运行 `python {TOOLSDIR}/dr_tools.py validate-chapter {TMPDIR}/chapters/chapter-{N}.md --expected-sections [sections数]`，逐个检查 encoding/headers/blockquote/sections 均通过。如有失败，重新生成该章。
+    → **Step 1 — 批量验证**：`python {TOOLSDIR}/dr_tools.py validate-all-chapters --chapters-dir {TMPDIR}/chapters/ --chapters {chapter_count}`，内部 ThreadPoolExecutor 并行验证所有章节。从输出 JSON 的 `failed_chapters` 中找到失败章节，逐个重新生成（重新派发章节 agent → 重新验证该章）。
+    → Step 1 或 Step 2 失败时，**先删除本次已写入的产物**（报告文件、中间文件等），再重新执行对应步骤，避免残留文件干扰下次运行
     → **Step 2 — 装配**：`python {TOOLSDIR}/dr_tools.py assemble-report --outline {TMPDIR}/outline.json --chapters-dir {TMPDIR}/chapters/ --datapool {TMPDIR}/data-pool.json --mode {depth_mode} --target-year {target_year} --output 案例报告/`，从输出行提取报告路径 `$REPORT`
     → **Step 3 — 数据受限处理**：读取 {TMPDIR}/task2_manifest.json 的 `data_limited` 字段。如果为 true，在报告标题后插入数据说明声明。
     → **Step 4 — 引用处理**：`python {TOOLSDIR}/dr_tools.py convert-citations --datapool {TMPDIR}/data-pool.json "$REPORT"`（从 data-pool 构建参考章节，验证正文 `[N]` 引用均有对应条目）
@@ -160,7 +162,7 @@ risk: medium
 
 装配、引用转换、QA 检查均由主 agent 通过 bash 命令直接执行 `{TOOLSDIR}/dr_tools.py` 完成：
 
-1. 逐章 `validate-chapter` → 结构验证
+1. `validate-all-chapters` → 批量结构验证（并行）
 2. `assemble-report` → 生成报告
 3. `convert-citations` → 引用转换
 4. `qa-report` → 质量检查
