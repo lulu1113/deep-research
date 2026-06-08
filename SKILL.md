@@ -67,6 +67,7 @@ risk: medium
  4. todowrite 创建进度条目（标题只写"Task N — 目标"，不得包含 oracle/unspecified-high 等 agent 类型名）
  5. ══ Task 1 — 分析主题 + 生成大纲 ══
     → 读取 {PROMPTSDIR}/task1_oracle.md，替换 {TMPDIR} {TOOLSDIR}，注入 prompt
+    → **只做变量替换，不添加语言、格式、报告结构等额外指令。Oracle 会基于主题自行判断报告语言和结构。**
     → 等待返回 oracle 回答（不写文件，只输出 JSON 内容）
     → 从回答中提取 outline.json 内容，用 `write` 工具创建 {TMPDIR}/outline.json
     → 从 outline.json 读取 title + chapter_count
