@@ -25,7 +25,7 @@
 | `/research 日本のアニメ産業のグローバル市場戦略` | 日本語レポート |
 | `/research 한국 반도체 산업의 글로벌 경쟁력 분석` | 한국어 보고서 |
 
-> The gap between individuals and institutions used to be "research team + paid databases." Now one person + one command can cover global public information.
+> It interacts with you entirely in the language you set and searches for materials in that target language — not a simple translation pipeline.
 
 ---
 
@@ -119,7 +119,7 @@ Layer 3 — Free source reinforcement (fallback)
 
 ## 8. Screenshot
 
-<img width="1475" height="955" alt="Screenshot" src="https://github.com/user-attachments/assets/ae4e8890-0a6e-4b1c-81c4-ddbedb3aadfd" />
+<img width="1086" height="879" alt="Screenshot 2026-06-08 at 20-51-58" src="https://github.com/user-attachments/assets/0d52a3df-19d3-4f2f-b8c4-6b8790387396" />
 
 ## 9. Installation
 
