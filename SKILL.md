@@ -90,9 +90,10 @@ repository: https://github.com/hoolulu/deep-research
   5. ══ Task 1 — 分析主题 + 生成大纲 ══
     → 读取 {PROMPTSDIR}/task1_oracle.md，替换 {TMPDIR} {TOOLSDIR} {LANG}，注入 prompt
     → **只做变量替换，不添加语言、格式、报告结构等额外指令。语言已由 Step 0 判定为 $LANG 并在 prompt 中替换 {LANG}。**
-    → 使用 `task(category="unspecified-high", load_skills=[], ...)` 派发，agent 用 `write` 工具直接将 outline.json 写入 {TMPDIR}/outline.json（绕过 shell pipe，避免非 ASCII 编码损坏）
-    → 等待返回回答
-    → 用 `read` 工具读取 {TMPDIR}/outline.json，提取 title + chapter_count + depth_mode
+    → 等待返回 oracle 回答
+    → 从回答中提取 outline.json 内容
+    → 用 `write` 工具创建 {TMPDIR}/outline.json（注入 `"language": "$LANG"`）
+    → 从 outline.json 读取 title + chapter_count + depth_mode
     → todowrite 标记完成
     → 向用户报告进度（使用 $LANG 语言）
  6. ══ Task 2 — 数据收集 + 结构化数据池 ══
@@ -137,13 +138,13 @@ repository: https://github.com/hoolulu/deep-research
 
 ---
 
-## 2. Task 1 — 主题分析 + 大纲（unspecified-high，write 工具写文件）
+## 2. Task 1 — 主题分析 + 大纲（oracle）
 
-**工具**：`task(category="unspecified-high", load_skills=[], ...)` | **一次调用**
+**工具**：`task(subagent_type="oracle", ...)` | **一次调用**
 **prompt 文件**：`prompts/task1_oracle.md`
 **用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR} {LANG}` 为实际路径后注入 prompt。
 
-**输出**：Task 1 agent 使用 `write` 工具直接将 outline.json 写入 `{TMPDIR}/outline.json`（绕过 shell pipe，避免非 ASCII 编码损坏）。主 agent 用 `read` 工具读取文件获取 title + chapter_count。
+**输出**：oracle 在回答中以 JSON 代码块输出大纲内容，主 agent 使用 `write` 工具创建 `{TMPDIR}/outline.json`（同时注入 `"language"` 字段）。
 
 ---
 
