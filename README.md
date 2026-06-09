@@ -141,7 +141,7 @@ Layer 3 — 免费源补强（兜底）
 
 <img width="1528" height="840" alt="Screenshot 2026-06-09 at 11-32-13" src="https://github.com/user-attachments/assets/506e91eb-1d5d-4312-aceb-9280d357e264" />
 
-<img width="1531" height="899" alt="Screenshot 2026-06-09 at 11-31-34" src="https://github.com/user-attachments/assets/33f1e78e-13d8-4c95-843b-d43fb78616c5" />
+<img width="1438" height="842" alt="Screenshot 2026-06-09 at 11-35-03" src="https://github.com/user-attachments/assets/75acd450-9349-4024-923d-f9b14ea601dd" />
 
 ## 九、安装
 
