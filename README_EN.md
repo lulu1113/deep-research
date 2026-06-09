@@ -71,7 +71,7 @@ The pipeline runs in 4 automated stages:
 ```
 ① Analyze outline — Analyze topic, generate research framework and search plan
          ↓
-② Collect data — ╭─ Online: SearXNG / Exa cascading search → Scrapling batch fetch → data pool
+② Collect data — ╭─ Online: SearXNG + Exa parallel search → quality-triggered reinforcement → Scrapling batch fetch → data pool
                   ╰─ Offline: read local files directly (PDF/DOCX/TXT/MD) → data pool
          ↓
 ③ Serial writing — One chapter at a time synchronously, facts embedded directly in prompts, no tool calls
@@ -83,13 +83,13 @@ The pipeline runs in 4 automated stages:
 
 ## 5. Search Pipeline & Built-in Resources
 
-All tools are built-in, no additional purchase needed. The system uses a **3-layer cascading search** strategy: SearXNG (author-deployed meta-search engine, 70+ engines including Baidu/Google/Brave) → Exa (OMO built-in cold standby) → 10+ free search engines + domestic Chinese sources (final fallback). Each layer stops probing further once a working engine is found.
+All tools are built-in, no additional purchase needed. The system uses a **dual-engine parallel + quality-triggered reinforcement** strategy: SearXNG (author-deployed, 70+ engines incl. Baidu/Google/Brave) and Exa (OMO built-in) are **detected in parallel** — when both are available, searches run simultaneously and results are merged and deduplicated. Free source reinforcement is triggered only when search result quality is insufficient (< 3 URLs per sub-question / outdated results / too few sources).
 
 ```
-Layer 1 — SearXNG (author-deployed, 70+ engines incl. Baidu/Google/Brave, ready out of the box)
-  ↓ if unavailable
-Layer 2 — Exa (OMO built-in cold standby, zero cost)
-  ↓ if unavailable
+SearXNG (Layer 1, author-deployed primary, 70+ engines, ready out of the box)
+  + Exa (Layer 2, OMO built-in standby, zero cost)
+  ∥ parallel search, results merged & deduplicated
+  ↓ triggered when search quality is insufficient
 Layer 3 — Free source reinforcement (fallback)
   ├─ Search line          │  Known-source line
   ├─ DuckDuckGo           │  Baidu Baike / Wikipedia
@@ -201,7 +201,7 @@ The entire pipeline runs automatically — you don't need to do anything:
 
 ```
 ① Analyze outline — Analyze topic, generate framework and search plan
-② Collect data — SearXNG/Exa cascade → Scrapling batch fetch → data pool → quality check
+② Collect data — SearXNG + Exa parallel search → quality-triggered reinforcement → Scrapling batch fetch → data pool → quality check
 ③ Serial writing — One chapter at a time, facts embedded in prompts
 ④ Validate & assemble — Batch validate → assemble → citations → QA
 ```
@@ -242,7 +242,7 @@ You can also specify a custom output path — ask AI to configure it.
 The system uses a **3-layer cascading search** architecture, each layer independent, auto-degrades on failure:
 
 - **Layer 1 — SearXNG (author-deployed)**: Meta-search engine aggregating 70+ engines (Baidu/Google/Brave), full coverage of Chinese and English. Built-in endpoint, ready out of the box, unlimited, no rate limits.
-- **Layer 2 — Exa (cold standby)**: OpenCode built-in search, OMO auto-configures, zero cost. On rate limit, auto-falls to Layer 3.
+- **Layer 2 — Exa (standby)**: OpenCode built-in search, OMO auto-configures, zero cost. Runs in **parallel** with SearXNG — both are detected simultaneously, and when both are available, search results are merged and deduplicated.
 - **Layer 3 — Free source reinforcement (final fallback)**: DuckDuckGo / Bing / Brave / Mojeek / Semantic Scholar / GDELT / arXiv + 20+ Chinese sources. No API keys required, always available.
 
 **2. How to use local materials for report generation?**

@@ -14,7 +14,7 @@ repository: https://github.com/hoolulu/deep-research
 生成对标券商/第三方研究机构标准的深度调研报告。
 
 - **架构**：主 agent 调度 4 个子 agent Task（大纲/数据/预检/装配）+ 1 轮主控并行派发章节，中间数据走临时文件
-- **数据源**：在线模式 → SearXNG（自建 Layer 1）→ Exa（Layer 2 冷备）→ 免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
+- **数据源**：在线模式 → SearXNG（自建 Layer 1 主力）+ Exa（Layer 2 备用）并行搜索 → 按质量触发免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
 - **安装**：见下方「安装与配置」
 - **输出**：`$TMPDIR/outline.json`（临时，非最终报告）
 - **最终报告**：保存到 skill 目录下的 `reports/`
@@ -152,20 +152,30 @@ repository: https://github.com/hoolulu/deep-research
     → todowrite 标记完成
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值）
     → 从 outline.json + task2_manifest.json + qa-report 中提取数据，使用 $LANG 语言汇报最终结果。
-      **所有标签必须翻译成 $LANG 语言**（outline/data/report/chapters/sources/facts/lines/chars/min 以及章节列表标题）。
-      例如 $LANG=fr → Plan/Données/Rapport/chapitres/sources/faits/lignes/caractères/min；$LANG=ja → 概要/データ/レポート/章/ソース/件/行/文字/分；以此类推。
-      严格按以下结构输出（<> 内替换为 $LANG 翻译后的词）：
+      严格按以下结构输出（表格表头固定"阶段"/"详情"始终不翻译；
+      阶段/模块/报告/详情/大纲/数据质量/章节列表/搜索引擎/抓取/生成时间/执行总结 等标签必须根据 $LANG 翻译）：
 
       ```
-      📋 <Outline词>：{outline.title} · {outline.chapter_count} <章词> · {outline.depth_mode}
-      📡 <Data词>：{task2_manifest.source_count} <来源词> · {task2_manifest.fact_count} <事实词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
-      📄 <Report词>：{REPORT} · {qa_report.line_count} <行词> · {outline.chapter_count} <章词> · {qa_report.word_count} <字词> · ⏱ {totalMin} <分钟词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method}
+      📊 **<执行总结词>**
 
-      <章节列表标题，用 $LANG 翻译>：
+      | <阶段词> | <详情词> |
+      |:----|:------|
+      | 📋 <大纲词> | {outline.title} · {outline.chapter_count} <章词> · {outline.depth_mode} |
+      | 📡 <数据质量词> | {task2_manifest.source_count} <来源词> · {task2_manifest.fact_count} <事实词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method} |
+      | 📄 <报告词> | {REPORT} |
+      |       | {qa_report.line_count} <行词> · {qa_report.word_count} <字词> · {outline.chapter_count} <章词> · ⏱ {totalMin} <分钟词> |
+      |       | <搜索引擎词>：{task2_manifest.search_engine} · <抓取词>：{task2_manifest.fetch_method} · <生成时间词>：{gen_time} |
+
+      <章节列表标题>：
       1. {各章标题} — {各章描述}
       2. {各章标题} — {各章描述}
       ...
       ```
+
+      其中：
+      - `{gen_time}` = 读取 {TMPDIR}/start_time.txt 中的任务开始时间，格式化为 `YYYY-MM-DD HH:mm:ss`
+      - `{REPORT}` 仅输出最终报告路径（`reports/{LANG}/xxx.md`），不包含任何 TMPDIR 中间路径
+      - 如果 `data_limited=true`，在章节列表后追加数据说明行
     → todowrite 全部完成
 
 **禁止**：主 agent 不得在 Task 调度之间自行执行搜索引擎调用或数据处理。搜索/抓取归 Task 2，大纲生成归 Task 1，章节撰写归 Task 3，装配验证归 Task 4。Task 间的 handoff 文件读取（outline.json、task2_manifest.json 等）不受此限。
@@ -266,9 +276,11 @@ Task 4 装配 + QA 通过后，内部已完成清理：
 | `bash` | date 时间戳 / 文件操作 | ✅ | — |
 | `write` | 写文件 | ✅ | — |
 
-**补强链路**：
+**搜索链路**：
 ```
-SearXNG（Layer 1 自建主力，70+引擎）→ Exa（Layer 2 冷备）→ 免费源补强（Layer 3 兜底）
+SearXNG（Layer 1 自建主力，70+引擎） + Exa（Layer 2 备用）并行搜索
+     ↓ 搜索结果质量不足时触发
+免费源补强（Layer 3 兜底）
      ↓
 A类搜索（DuckDuckGo/Bing/Semantic Scholar/GDELT via webfetch）
      → B类国内源（百度百科/199IT/艾瑞/东方财富/知乎/国统局）
