@@ -202,7 +202,7 @@ The entire pipeline runs automatically — you don't need to do anything:
 ```
 ① Analyze outline — Analyze topic, generate framework and search plan
 ② Collect data — SearXNG + Exa parallel search → quality-triggered reinforcement → Scrapling batch fetch → data pool → quality check
-③ Serial writing — One chapter at a time, facts embedded in prompts
+③ Parallel writing — All chapters simultaneously, facts embedded in prompts
 ④ Validate & assemble — Batch validate → assemble → citations → QA
 ```
 
