@@ -148,16 +148,18 @@ repository: https://github.com/hoolulu/deep-research
     → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
     → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
     → 读取 `{PROMPTSDIR}/task3_chapter_agent.md` 模板
-     → 在一个循环内为每一章调用 task()：
-      - 读取 outline.chapters[N] 的 title、sections
-      - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
-      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
-      - 全部使用 run_in_background=true 一次性发出
-    → 收集所有 background task ID，等待全部完成
-    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
-    → todowrite 标记完成（每完成一章标记一个子项）
-    → 向用户报告进度（使用 $LANG 语言）
-     8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
+      → 在一个循环内为每一章调用 task()：
+       - 读取 outline.chapters[N] 的 title、sections
+       - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
+       - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N] 编号`（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
+       - 全部使用 run_in_background=true 一次性发出
+     → 收集所有返回的 background_task_id
+     → **结束本轮响应。所有章节 agent 已在后台运行。等待系统发送"所有后台任务完成"通知。不要主动调用 background_output 轮询。**
+     → 通知到达后，收集各章节结果文件（{TMPDIR}/chapters/chapter-{N}.md），继续 Task 4。
+     → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
+     → todowrite 标记完成（每完成一章标记一个子项）
+     → 向用户报告进度（使用 $LANG 语言）
+      8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
     → **Step 0 — 清理残留**：删除 reports/ 目录下所有 0 字节文件（前次装配失败的空壳）；创建 reports/$LANG/ 子目录（如果不存在）
     → **Step 1 — 批量验证**：`python {TOOLSDIR}/dr_tools.py validate-all-chapters --chapters-dir {TMPDIR}/chapters/ --chapters {chapter_count}`，内部 ThreadPoolExecutor 并行验证所有章节。从输出 JSON 的 `failed_chapters` 中找到失败章节，逐个重新生成（重新派发章节 agent → 重新验证该章）。
     → Step 1 或 Step 2 失败时，**先删除本次已写入的产物**（报告文件、中间文件等），再重新执行对应步骤，避免残留文件干扰下次运行
