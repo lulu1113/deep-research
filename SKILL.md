@@ -127,20 +127,20 @@ repository: https://github.com/hoolulu/deep-research
     → 读取 {TMPDIR}/task2_manifest.json，提取 source_count + fact_count + search_engine + fetch_method
     → todowrite 标记完成
     → 向用户报告进度（使用 $LANG 语言）
-   7. ══ Task 3 — 并行派发章节撰写 ══
+   7. ══ Task 3 — 逐一同步撰写章节 ══
     → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
     → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
     → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
     → 读取 `{PROMPTSDIR}/task3_chapter_agent.md` 模板
-     → 在一个循环内为每一章调用 task()：
+    → 在循环内**逐一**调用 task(run_in_background=false) 同步等待每章写完，再写下一章：
       - 读取 outline.chapters[N] 的 title、sections
       - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
-      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
-      - 全部使用 run_in_background=true 一次性发出
-    → 收集所有 background task ID，等待全部完成
-    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
+      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号
+      - 同步等待当前章结束（不依赖系统通知）
     → todowrite 标记完成（每完成一章标记一个子项）
+    → 用 `read` 确认 {TMPDIR}/chapters/chapter-{N}.md 存在
     → 向用户报告进度（使用 $LANG 语言）
+    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
      8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
     → **Step 0 — 清理残留**：删除 reports/ 目录下所有 0 字节文件（前次装配失败的空壳）；创建 reports/$LANG/ 子目录（如果不存在）
     → **Step 1 — 批量验证**：`python {TOOLSDIR}/dr_tools.py validate-all-chapters --chapters-dir {TMPDIR}/chapters/ --chapters {chapter_count}`，内部 ThreadPoolExecutor 并行验证所有章节。从输出 JSON 的 `failed_chapters` 中找到失败章节，逐个重新生成（重新派发章节 agent → 重新验证该章）。
