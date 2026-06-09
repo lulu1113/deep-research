@@ -87,42 +87,26 @@ repository: https://github.com/hoolulu/deep-research
    → Do NOT output anything during this step.
  → Write language code: use `write` tool to create {TMPDIR}/language.txt with the ISO code
  → Set `$LANG` = language code from the step above
-   → **从这一行开始，你在用户界面显示的所有内容必须使用 $LANG**
-  → **⚠️ SKILL.md 的指令是中文写的（为了让我读懂），但你的输出绝不能跟着用中文。你读到中文指令时意识上翻译一下再输出。**
-  → **任何面向用户的文字——状态汇报、进度条、Todo、错误信息、思考过程——全部用 $LANG。只有代码/文件名/工具调用保持原文。**
+  → **从这一行开始，所有面向用户的输出必须使用 $LANG。SKILL.md 的指令是中文写的（为了让我读懂），但你的输出绝不能跟着用中文。你读到中文指令时意识上翻译一下再输出。**
   → Announce detected language to the user (single line, in $LANG, e.g. "🌐 Language detected: en")
-
-══ Step 0.5 — 离线模式判定 ══
-
-  → 你已经读取了用户原始输入。用自然语言理解判断用户关于数据来源的意图，不要用关键词匹配：
-
-    **判断三个问题**（语义理解，非关键词）：
-    1. 用户是否提到了本地文件/目录/资料？（任何表述，如"我的文件""本地""~/docs/"等）
-    2. 用户是否明确要求不要联网？（"只看本地""不联网""离线""不用上网搜"等）
-    3. 用户是否明确要求联网补充？（"不够的联网搜""在网上查一下补充"等）
-
-    **对应决策**：
-
-    | 提到本地文件 | 不联网 | 联网补充 | 结论 |
-    |:-----------:|:------:|:--------:|:-----|
-    | ✅ | ✅ | — | 离线模式，跳过搜索 |
-    | ✅ | ❌ | — | 离线模式（提了本地文件但未说联网 → 默认只看本地） |
-    | ✅ | ❌ | ✅ | **不上线模式，正常搜索**（用户要联网补充） |
-    | ❌ | — | — | 正常在线流程 |
-
-    **路径提取**：从输入中提取文件或目录路径（支持 ~/docs 和绝对/相对路径）
-    - 离线模式 + 有路径 → 写入 {TMPDIR}/offline_mode.txt，`offline_mode=true`
-        → 向用户报告已启用离线模式（单行，在语言通告之后，使用 $LANG 语言）
-    - 离线模式 + 无路径 → 回复用户询问路径，不要继续后续 Task
-    - 正常模式 → 空路径，`offline_mode=false`
 
 ══ 主流程 ══
 
-⚠️ **再次提醒：以下所有"向用户报告进度"的输出必须使用 $LANG，不得使用中文（除非 $LANG=zh）。即使你读到的指令是中文。** ⚠️
-
- 1. 记录任务开始时间到 {TMPDIR}/start_time.txt
- 2. todowrite 创建进度条目（使用 $LANG 语言）
- 3. ══ Task 1 — 分析主题 + 生成大纲 ══
+ 1. ══ 离线模式判定（Step 0.5） ══
+    → 你已经读取了用户原始输入。用自然语言理解判断用户关于数据来源的意图，不要用关键词匹配：
+      - 用户是否提到了本地文件/目录/资料？
+      - 用户是否明确要求不要联网？
+      - 用户是否明确要求联网补充？
+    → 判断逻辑：
+      - 提到本地文件 +（未说联网 / 不联网）→ 离线模式，跳过搜索
+      - 提到本地文件 + 说"联网补充" → 正常流程（搜+读本地）
+      - 未提本地文件 → 正常流程
+    → 离线模式 + 有路径 → {TMPDIR}/offline_mode.txt，`offline_mode=true`，向用户报告单行说明
+    → 离线模式 + 无路径 → 回复用户询问路径，不继续
+    → 正常模式 → `offline_mode=false`
+ 2. 记录任务开始时间到 {TMPDIR}/start_time.txt
+ 3. todowrite 创建进度条目（使用 $LANG 语言）
+ 4. ══ Task 1 — 分析主题 + 生成大纲 ══
     → 读取 {PROMPTSDIR}/task1_oracle.md，替换 {TMPDIR} {TOOLSDIR} {LANG}，注入 prompt
     → **只做变量替换，不添加语言、格式、报告结构等额外指令。语言已由 Step 0 判定为 $LANG 并在 prompt 中替换 {LANG}。**
     → 等待返回 oracle 回答
@@ -148,18 +132,16 @@ repository: https://github.com/hoolulu/deep-research
     → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
     → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
     → 读取 `{PROMPTSDIR}/task3_chapter_agent.md` 模板
-    → 在一个循环内为每一章调用 task()：
+     → 在一个循环内为每一章调用 task()：
       - 读取 outline.chapters[N] 的 title、sections
       - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
-      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N] 编号`（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
+      - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号（替换 `[章节 title]`、`[N]`、`[sections 列表]`、`{per_chapter_chars}`，并在 prompt 末尾追加该章相关的 [N] 事实列表）
       - 全部使用 run_in_background=true 一次性发出
-    → 收集所有 background task ID，存入列表 ids
-    → **在输出任何文字之前，立即调用 background_output(task_id=ids[-1], block=true) 阻塞等最后一个最慢的章节完成。全部完成后自动继续。**
-    → 用 `read` 确认每章的 {TMPDIR}/chapters/chapter-{N}.md 存在
+    → 收集所有 background task ID，等待全部完成
+    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
     → todowrite 标记完成（每完成一章标记一个子项）
     → 向用户报告进度（使用 $LANG 语言）
-    → **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
-      8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
+     8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
     → **Step 0 — 清理残留**：删除 reports/ 目录下所有 0 字节文件（前次装配失败的空壳）；创建 reports/$LANG/ 子目录（如果不存在）
     → **Step 1 — 批量验证**：`python {TOOLSDIR}/dr_tools.py validate-all-chapters --chapters-dir {TMPDIR}/chapters/ --chapters {chapter_count}`，内部 ThreadPoolExecutor 并行验证所有章节。从输出 JSON 的 `failed_chapters` 中找到失败章节，逐个重新生成（重新派发章节 agent → 重新验证该章）。
     → Step 1 或 Step 2 失败时，**先删除本次已写入的产物**（报告文件、中间文件等），再重新执行对应步骤，避免残留文件干扰下次运行
