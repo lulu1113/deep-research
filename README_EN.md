@@ -189,8 +189,10 @@ After installation and restart, type in the chat:
 | `/research <topic>` | standard mode (online search) | ~10-15 min |
 | `/research <topic> -quick` | quick mode (online search) | ~8-12 min |
 | `/research <topic> -deep` | deep mode (online search) | ~15-25 min |
-| `/research from ~/reports/local.pdf generate a report offline` | offline mode (local files) | depends on file size |
+| `local file research` | offline mode (local files) | depends on file size |
 | `/research-update` | Check for updates | — |
+
+> Local file research: see FAQ §2 "How to use local materials for report generation?" for exact prompts.
 
 ### What Happens After You Send It
 
