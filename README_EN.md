@@ -231,9 +231,13 @@ The system uses a **3-layer cascading search** architecture, each layer independ
 
 **2. How to use local materials for report generation?**
 
-After installing the skill, you can ask AI with these prompts:
+The skill has a built-in offline mode that generates fully-formatted reports (TOC, citations, metadata) from local files. Supported formats:
 
-- Scenario 1: Local materials + online supplement (recommended)
+- `.md` / `.txt` — Native read
+- `.pdf` — First tries read tool (works if your model supports PDF input), falls back to auto-installing PyPDF2 for text extraction
+- `.docx` — AI auto-installs python-docx and extracts text
+
+- Scenario 1: Local materials + online supplement (recommended for most complete research)
   ```
   Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Prioritize local content, search online for anything missing.
   ```
@@ -242,11 +246,14 @@ After installing the skill, you can ask AI with these prompts:
   ```
   Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Use only local materials, do not search online.
   ```
+  Task 2 skips the search/scraping pipeline and reads local files directly. Task 3 (chapter writing) and Task 4 (assembly/QA) run normally. The final output includes metadata, `[N]` citations, and TOC.
 
 - Scenario 3: Pure local, lightweight (no professional format needed)
   ```
   Help me organize the materials in D:\notes\projectA into a structured research report with table of contents and chapter headings.
   ```
+
+> **Scenario guide**: Use Scenario 1 when your materials are incomplete (online supplement), Scenario 2 when you have sufficient local materials and need a professional report format, and Scenario 3 for quick summarization without the full pipeline.
 
 **3. How to update to the latest version?**
 

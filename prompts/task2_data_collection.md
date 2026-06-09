@@ -20,6 +20,96 @@
 - 数据校验 → `{TOOLSDIR}/dr_tools.py check-datapool <file> --mode <mode>`
 如果遇到该脚本未覆盖的需求，在 task2_manifest.json 的 `gaps` 字段中记录"缺少命令：[描述]"，由主 agent 处理。
 
+## 离线模式（{OFFLINE_MODE}=true 时执行）
+
+当 `{OFFLINE_MODE}=true` 时，**跳过全部 Step 1-4（搜索引擎 + 补强 + 抓取）**，改从本地文件提取数据。
+
+### Step L1 — 读取本地文件
+
+从 `{LOCAL_PATHS}` 获取用户指定的文件或目录路径：
+
+☐ **如果是目录**：用 `glob` 工具列出目录中所有文件
+☐ **如果是文件**：直接处理指定文件
+
+按文件类型分别处理：
+
+| 文件类型 | 处理方式 |
+|:--------|:---------|
+| `.md` / `.txt` | `read` 工具直接读取 |
+| `.pdf` | **先用 `read` 工具尝试**（模型如支持 PDF 输入则直接理解）；如失败 → 自动安装 PyPDF2 提取文本 |
+| `.docx` | **自动安装 python-docx 后提取**（见下方说明）|
+| 其他格式 | 标记为不支持，加入 gaps |
+
+**PDF 文件处理**（如果 `read` 工具返回的不是可读文本而是"PDF read successfully"，说明模型不支持直接解析 PDF）：
+```
+pip install pypdf2 -q
+python3 -c "
+from PyPDF2 import PdfReader
+import sys
+reader = PdfReader(sys.argv[1])
+for page in reader.pages:
+    print(page.extract_text())
+" "{文件路径}" > "{TMPDIR}/extracted-{文件名}.txt"
+```
+然后用 `read` 工具读取提取后的 `.txt` 文件。
+
+**DOCX 文件处理**（同样需要额外提取）：
+```
+pip install python-docx -q
+python3 -c "
+import docx, sys
+doc = docx.Document(sys.argv[1])
+for p in doc.paragraphs:
+    print(p.text)
+" "{文件路径}" > "{TMPDIR}/extracted-{文件名}.txt"
+```
+然后用 `read` 工具读取提取后的 `.txt` 文件。
+
+> 以上格式转换是纯 I/O 操作，不属于"核心数据处理"，可豁免"严禁编写内联代码"的铁律。转换后读取 `.txt` 即可。
+
+📝 读取完成后向用户报告：`📄 已读取 N 个本地文件`
+
+### Step L2 — 构建数据池
+
+从 outline.json 读取子问题列表，在已读取的本地文件内容中查找匹配的数据：
+
+**数据池格式**（与标准模式完全一致）：
+
+| 模式 | 额外字段要求 |
+|:----|:------------|
+| quick | facts 只需基础字段（src/yr/met/val/u/ctx/url/title）|
+| standard | facts 需要加 `cur`（时效性：current/recent/dated）和 `conf`（置信度：high/medium/low）|
+| deep | 同 standard，且 ctx 长度不限 |
+
+```json
+{"question":"子问题文本","src":["文件名"],"facts":[{"src":"文件名","yr":"文件中出现年份或无年份留空","met":"指标名","val":数值,"u":"单位","ctx":"说明","url":"文件路径","title":"文件名","cur":"current","conf":"high"}],"controversies":[],"gaps":["缺口描述"]}
+```
+
+**提取规则**：
+1. 严格基于文件内容，禁止推测或编造
+2. 优先提取量化数据（数字+单位+年份）
+3. 每条事实的 `url` 填本地文件路径（如 `/Users/xxx/report.pdf`），`src` 填文件名
+4. 文件内容不包含所需数据 → gaps 写"本地资料未覆盖"（不要编造）
+5. 如文件较多，先扫描文件名 + 前几行判断相关性，再精读匹配文件
+
+### Step L3 — 输出 + 质检
+
+与标准模式的 Step 6 相同：
+
+☐ 使用 `write` 工具创建 `{TMPDIR}/data-pool.json`（UTF-8 无 BOM）
+☐ 运行数据质检：`python {TOOLSDIR}/dr_tools.py check-datapool {TMPDIR}/data-pool.json --mode {depth_mode}`
+☐ 创建 `{TMPDIR}/cautions.json`
+☐ 创建 `{TMPDIR}/task2_manifest.json`：
+
+```json
+{"task":2,"source_count":N,"fact_count":N,"search_engine":"本地文件","fetch_method":"本地读取","data_pool_path":"{TMPDIR}/data-pool.json","cautions_path":"{TMPDIR}/cautions.json","data_limited":false,"searxng_available":false,"exa_available":false}
+```
+
+> `source_count` = 本地文件数，`fact_count` = 提取到的事实总数。`data_limited` 固定为 false（用户选择了只看本地）。
+> 对于 check-datapool 的来源数量检查——本地文件场景下 source_count < 8 不标记 data_limited，因为用户选择了纯本地模式。
+
+在回答中只输出 data-pool.json 路径。
+
 ## 数据收集工作流（严格执行）
 
 Step 1 — 搜索引擎健康检测

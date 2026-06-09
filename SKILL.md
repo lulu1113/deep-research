@@ -14,7 +14,7 @@ repository: https://github.com/hoolulu/deep-research
 生成对标券商/第三方研究机构标准的深度调研报告。
 
 - **架构**：主 agent 调度 4 个子 agent Task（大纲/数据/预检/装配）+ 1 轮主控并行派发章节，中间数据走临时文件
-- **数据源**：SearXNG（自建 Layer 1）→ Exa（Layer 2 冷备）→ 免费源补强（Layer 3 兜底）→ Scrapling 批量抓取
+- **数据源**：在线模式 → SearXNG（自建 Layer 1）→ Exa（Layer 2 冷备）→ 免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
 - **安装**：见下方「安装与配置」
 - **输出**：`$TMPDIR/outline.json`（临时，非最终报告）
 - **最终报告**：保存到 skill 目录下的 `reports/`
@@ -88,7 +88,31 @@ repository: https://github.com/hoolulu/deep-research
  → Write language code: use `write` tool to create {TMPDIR}/language.txt with the ISO code
  → Set `$LANG` = language code from the step above
  → **From now on, ALL output must be in $LANG**
- → Announce detected language to the user (single line, in $LANG, e.g. "🌐 Language detected: en")
+  → Announce detected language to the user (single line, in $LANG, e.g. "🌐 Language detected: en")
+
+══ Step 0.5 — 离线模式判定 ══
+
+  → 你已经读取了用户原始输入。用自然语言理解判断用户关于数据来源的意图，不要用关键词匹配：
+
+    **判断三个问题**（语义理解，非关键词）：
+    1. 用户是否提到了本地文件/目录/资料？（任何表述，如"我的文件""本地""~/docs/"等）
+    2. 用户是否明确要求不要联网？（"只看本地""不联网""离线""不用上网搜"等）
+    3. 用户是否明确要求联网补充？（"不够的联网搜""在网上查一下补充"等）
+
+    **对应决策**：
+
+    | 提到本地文件 | 不联网 | 联网补充 | 结论 |
+    |:-----------:|:------:|:--------:|:-----|
+    | ✅ | ✅ | — | 离线模式，跳过搜索 |
+    | ✅ | ❌ | — | 离线模式（提了本地文件但未说联网 → 默认只看本地） |
+    | ✅ | ❌ | ✅ | **不上线模式，正常搜索**（用户要联网补充） |
+    | ❌ | — | — | 正常在线流程 |
+
+    **路径提取**：从输入中提取文件或目录路径（支持 ~/docs 和绝对/相对路径）
+    - 离线模式 + 有路径 → 写入 {TMPDIR}/offline_mode.txt，`offline_mode=true`
+        → 向用户报告已启用离线模式（单行，在语言通告之后，使用 $LANG 语言）
+    - 离线模式 + 无路径 → 回复用户询问路径，不要继续后续 Task
+    - 正常模式 → 空路径，`offline_mode=false`
 
 ══ 主流程 ══
 
@@ -103,9 +127,14 @@ repository: https://github.com/hoolulu/deep-research
     → 从 outline.json 读取 title + chapter_count + depth_mode
     → todowrite 标记完成
     → 向用户报告进度（使用 $LANG 语言）
- 6. ══ Task 2 — 数据收集 + 结构化数据池 ══
-    → 读取 {PROMPTSDIR}/task2_data_collection.md，替换变量后注入 prompt
-    → 派发 task()，等待返回
+  6. ══ Task 2 — 数据收集 + 结构化数据池 ══
+     → 读取 {PROMPTSDIR}/task2_data_collection.md
+     → 替换标准变量 {TMPDIR} {TOOLSDIR} {LANG} {COUNTRY}
+     → 如果 `offline_mode=true`，额外替换：
+       {OFFLINE_MODE} → true
+       {LOCAL_PATHS} → 读取 {TMPDIR}/offline_mode.txt 的内容（路径列表）
+     → 如果 `offline_mode=false`，替换 {OFFLINE_MODE} → false，{LOCAL_PATHS} → 空字符串
+     → 派发 task()，等待返回
     → 如失败（task 报错或 task2_manifest.json 不存在），**自动重试 1 次**，重新派发。第二次仍失败则向用户报告并终止
     → 读取 {TMPDIR}/task2_manifest.json，提取 source_count + fact_count + search_engine + fetch_method
     → todowrite 标记完成
@@ -169,7 +198,7 @@ repository: https://github.com/hoolulu/deep-research
 
 **工具**：`task(category="unspecified-high", load_skills=[], ...)`
 **prompt 文件**：`prompts/task2_data_collection.md`
-**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR}` `{LANG}` `{COUNTRY}` 为实际值后注入 prompt。
+**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR}` `{LANG}` `{COUNTRY}` `{OFFLINE_MODE}` `{LOCAL_PATHS}` 为实际值后注入 prompt。
 
 **输出**：{TMPDIR}/data-pool.json + {TMPDIR}/task2_manifest.json（使用 `write` 工具创建）
 
