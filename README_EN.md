@@ -14,6 +14,7 @@
 |---|---|
 | 🎯 **One command** | `/research <topic>` → fully automated research, zero manual intervention |
 | ⏱ **Report in ~10 min** | quick mode ~8–12 min, standard ~10–15 min |
+| 📁 **Local file research** | Supports PDF/DOCX/TXT/MD, no internet needed, auto-parsed |
 | 🌍 **19 languages** | Auto-detects topic language, generates report in the same language |
 | 🔧 **Not OpenCode-exclusive** | Adaptable for Claude Code, Cursor, Codex CLI, Windsurf, Cline and more |
 
@@ -69,12 +70,15 @@ The pipeline runs in 4 automated stages:
 ```
 ① Analyze outline — Analyze topic, generate research framework and search plan
          ↓
-② Collect data — SearXNG / Exa cascading search → Scrapling batch fetch → data pool extraction → quality check
+② Collect data — ╭─ Online: SearXNG / Exa cascading search → Scrapling batch fetch → data pool
+                  ╰─ Offline: read local files directly (PDF/DOCX/TXT/MD) → data pool
          ↓
 ③ Parallel writing — Multiple chapters written simultaneously, facts embedded directly in prompts, no tool calls
          ↓
 ④ Validate & assemble — Batch validate → assemble-report → convert-citations → qa-report
 ```
+
+> Both modes share stages ③④. The data pool format is identical — chapter writing and assembly QA are unchanged.
 
 ## 5. Search Pipeline & Built-in Resources
 
@@ -158,15 +162,15 @@ Adaptation notes: Multi-agent orchestration needs to map to each platform's nati
 
 ### Prerequisites
 
-| Component | Purpose | How to get |
-|-----------|---------|------------|
-| **OpenCode (core)** | AI coding agent runtime | Visit [https://opencode.ai/](https://opencode.ai/) |
-| **oh-my-openagent (required)** | Sub-agents for analysis/search + auto MCP setup | Ask AI to install via oh-my-openagent docs |
-| **Scrapling (required)** | Web page full-text scraping | Ask AI to install and register MCP |
-| **SearXNG** | Web search (primary, author-deployed 70+ engines) | Built into skill, ready out of the box |
-| **Exa MCP** | Web search (cold standby) | Built into OMO, no setup needed |
+| Component | Online mode | Offline mode | How to get |
+|-----------|:-----------:|:------------:|------------|
+| **LLM runtime** (OpenCode / Claude Code / Codex CLI / Cursor etc.) | ✅ Required | ✅ Required | Pick your preferred tool |
+| **oh-my-openagent (OpenCode users)** | ✅ Required | ✅ Required | Installs sub-agent orchestration |
+| **Scrapling** | ✅ Required | ❌ Not needed | For web scraping; offline mode doesn't need it |
+| **SearXNG** (author-deployed, 70+ engines) | ✅ Used | ❌ Not needed | Built-in endpoint, ready out of the box |
+| **Exa MCP** | ✅ Cold standby | ❌ Not needed | Built into OMO |
 
-> This skill depends on oh-my-openagent's sub-agent feature. Without it, `/research` won't work. Other coding tools have their own multi-agent frameworks.
+> **Platform note**: OpenCode requires the oh-my-openagent plugin for multi-agent orchestration (Task 1-4 architecture). Other tools (Claude Code, Cursor, Codex CLI) have their own native multi-agent frameworks and can adapt this skill's workflow without oh-my-openagent. Offline mode only needs the LLM's file-reading capability — no search/scraping components required.
 
 ## 10. Usage
 
@@ -174,9 +178,10 @@ After installation and restart, type in the chat:
 
 | Command | Description | Est. time |
 |---------|-------------|-----------|
-| `/research <topic>` | standard mode | ~10-15 min |
-| `/research <topic> -quick` | quick mode | ~8-12 min |
-| `/research <topic> -deep` | deep mode | ~15-25 min |
+| `/research <topic>` | standard mode (online search) | ~10-15 min |
+| `/research <topic> -quick` | quick mode (online search) | ~8-12 min |
+| `/research <topic> -deep` | deep mode (online search) | ~15-25 min |
+| `/research from ~/reports/local.pdf generate a report offline` | offline mode (local files) | depends on file size |
 | `/research-update` | Check for updates | — |
 
 ### What Happens After You Send It
@@ -231,29 +236,27 @@ The system uses a **3-layer cascading search** architecture, each layer independ
 
 **2. How to use local materials for report generation?**
 
-The skill has a built-in offline mode that generates fully-formatted reports (TOC, citations, metadata) from local files. Supported formats:
+The skill has a built-in offline mode that generates fully-formatted reports (TOC, citations, metadata) from local files. Supported formats: **MD / TXT** (native read), **PDF** (AI auto-installs PyPDF2 for text extraction), **DOCX** (AI auto-installs python-docx).
 
-- `.md` / `.txt` — Native read
-- `.pdf` — First tries read tool (works if your model supports PDF input), falls back to auto-installing PyPDF2 for text extraction
-- `.docx` — AI auto-installs python-docx and extracts text
+Choose your scenario:
 
-- Scenario 1: Local materials + online supplement (recommended for most complete research)
-  ```
-  Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Prioritize local content, search online for anything missing.
-  ```
+**Scenario 1: Local materials + online supplement** (recommended for most complete research)
+```
+Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Prioritize local content, search online for anything missing.
+```
 
-- Scenario 2: Local materials only, no internet
-  ```
-  Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Use only local materials, do not search online.
-  ```
-  Task 2 skips the search/scraping pipeline and reads local files directly. Task 3 (chapter writing) and Task 4 (assembly/QA) run normally. The final output includes metadata, `[N]` citations, and TOC.
+**Scenario 2: Local materials only, no internet** (when you have sufficient data and don't want online distractions)
+```
+Use the deep-research skill with my local files in D:\notes\projectA to generate a research report on XX (quick mode). Use only local materials, do not search online.
+```
+The system skips the search/scraping pipeline and reads local files directly. Task 3 (chapter writing) and Task 4 (assembly/QA) run normally. The final output includes metadata, `[N]` citations, and TOC.
 
-- Scenario 3: Pure local, lightweight (no professional format needed)
-  ```
-  Help me organize the materials in D:\notes\projectA into a structured research report with table of contents and chapter headings.
-  ```
+**Scenario 3: Pure local, no skill** (lightweight, no professional format needed)
+```
+Help me organize the materials in D:\notes\projectA into a structured research report with table of contents and chapter headings.
+```
 
-> **Scenario guide**: Use Scenario 1 when your materials are incomplete (online supplement), Scenario 2 when you have sufficient local materials and need a professional report format, and Scenario 3 for quick summarization without the full pipeline.
+> **Scenario guide**: Incomplete materials → Scenario 1 (online supplement); Sufficient materials + need professional format → Scenario 2 (offline mode); Quick summary only → Scenario 3 (lightweight).
 
 **3. How to update to the latest version?**
 
