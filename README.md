@@ -133,7 +133,15 @@ Layer 3 — 免费源补强（兜底）
 
 ## 八、运行截图
 
-<img width="1086" height="879" alt="Screenshot 2026-06-08 at 20-51-58" src="https://github.com/user-attachments/assets/0d52a3df-19d3-4f2f-b8c4-6b8790387396" />
+<img width="1532" height="836" alt="Screenshot 2026-06-09 at 11-28-17" src="https://github.com/user-attachments/assets/736b0113-f054-4dba-b018-e656a51a9fb4" />
+
+<img width="1532" height="932" alt="Screenshot 2026-06-09 at 11-30-13" src="https://github.com/user-attachments/assets/a88cbf27-7b6c-4ea3-8b51-424f48bf9906" />
+
+<img width="1524" height="846" alt="Screenshot 2026-06-09 at 11-30-55" src="https://github.com/user-attachments/assets/ef10865d-3a72-4658-ac9c-28b2221e77f5" />
+
+<img width="1528" height="840" alt="Screenshot 2026-06-09 at 11-32-13" src="https://github.com/user-attachments/assets/506e91eb-1d5d-4312-aceb-9280d357e264" />
+
+<img width="1531" height="899" alt="Screenshot 2026-06-09 at 11-31-34" src="https://github.com/user-attachments/assets/33f1e78e-13d8-4c95-843b-d43fb78616c5" />
 
 ## 九、安装
 
