@@ -51,7 +51,7 @@ People who need professional-grade research capabilities without relying on paid
 
 | Metric | Data (standard mode example) |
 |--------|------------------------------|
-| Report length | 500-700 lines / ~12,000-18,000 chars |
+| Report length | 500-700 lines / ~12,000-20,000 chars (varies by language) |
 | Data tables | 15-25, covering market size, competitive landscape, technical specs |
 | Analysis paragraphs | 80-120 (each with conclusion + data + causation + judgment) |
 | Unique sources cited | 15-25 (Chinese and international institutions) |
@@ -116,9 +116,9 @@ Layer 3 — Free source reinforcement (fallback)
 
 | Command | Purpose | Min chapters | Min paragraphs/chapter | Max chars | Est. time |
 |---------|---------|-------------|----------------------|-----------|-----------|
-| `/research <topic>` | standard (default) | 8 | ≥ 5 | ≤ 12,000 | ~10–15 min |
-| `/research <topic> -quick` | Quick insight | 5 | ≥ 4 | ≤ 8,000 | ~8–12 min |
-| `/research <topic> -deep` | Maximum depth | 10 | ≥ 6 | ≤ 25,000 | ~15–25 min |
+| `/research <topic>` | standard (default) | 8 | ≥ 5 | ≤ 15,000 | ~10–15 min |
+| `/research <topic> -quick` | Quick insight | 5 | ≥ 4 | ≤ 10,000 | ~8–12 min |
+| `/research <topic> -deep` | Maximum depth | 10 | ≥ 6 | ≤ 30,000 | ~15–25 min |
 
 > Parameters in `profiles.json`, restart to apply. Char count excludes whitespace and Markdown syntax.
 

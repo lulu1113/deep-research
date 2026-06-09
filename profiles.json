@@ -2,16 +2,16 @@
   "quick": {
     "min_chapters": 5,
     "min_paragraphs": 4,
-    "max_chars": 8000
+    "max_chars": 10000
   },
   "standard": {
     "min_chapters": 8,
     "min_paragraphs": 5,
-    "max_chars": 12000
+    "max_chars": 15000
   },
   "deep": {
     "min_chapters": 10,
     "min_paragraphs": 6,
-    "max_chars": 25000
+    "max_chars": 30000
   }
 }
