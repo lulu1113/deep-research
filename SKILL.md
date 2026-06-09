@@ -153,7 +153,7 @@ repository: https://github.com/hoolulu/deep-research
     → ⏱ **强制计算总耗时**（读取 start_time.txt + 当前时间算差值）
     → 从 outline.json + task2_manifest.json + qa-report 中提取数据，使用 $LANG 语言汇报最终结果。
       严格按以下结构输出（表格表头固定"阶段"/"详情"始终不翻译；
-      阶段/模块/报告/详情/大纲/数据质量/章节列表/搜索引擎/抓取/生成时间/执行总结 等标签必须根据 $LANG 翻译）：
+      阶段/详情/大纲/观点速览/数据质量/报告/章节列表/执行总结/行/字/分钟/生成时间 等标签必须根据 $LANG 翻译）：
 
       ```
       📊 **<执行总结词>**
@@ -161,10 +161,10 @@ repository: https://github.com/hoolulu/deep-research
       | <阶段词> | <详情词> |
       |:----|:------|
       | 📋 <大纲词> | {outline.title} · {outline.chapter_count} <章词> · {outline.depth_mode} |
+      | 🎯 <观点速览词> | {outline.chapters[0].description} |
       | 📡 <数据质量词> | {task2_manifest.source_count} <来源词> · {task2_manifest.fact_count} <事实词> · {task2_manifest.search_engine} · {task2_manifest.fetch_method} |
       | 📄 <报告词> | {REPORT} |
-      |       | {qa_report.line_count} <行词> · {qa_report.word_count} <字词> · {outline.chapter_count} <章词> · ⏱ {totalMin} <分钟词> |
-      |       | <搜索引擎词>：{task2_manifest.search_engine} · <抓取词>：{task2_manifest.fetch_method} · <生成时间词>：{gen_time} |
+      |       | {qa_report.line_count} <行词> · {qa_report.word_count} <字词> · {outline.chapter_count} <章词> · ⏱ {totalMin} <分钟词> · <生成时间词>：{gen_time} |
 
       <章节列表标题>：
       1. {各章标题} — {各章描述}
@@ -173,6 +173,7 @@ repository: https://github.com/hoolulu/deep-research
       ```
 
       其中：
+      - `{outline.chapters[0].description}` = 从 outline.json 读取第 1 章（核心观点）的 description 字段，作为观点速览摘要
       - `{gen_time}` = 读取 {TMPDIR}/start_time.txt 中的任务开始时间，格式化为 `YYYY-MM-DD HH:mm:ss`
       - `{REPORT}` 仅输出最终报告路径（`reports/{LANG}/xxx.md`），不包含任何 TMPDIR 中间路径
       - 如果 `data_limited=true`，在章节列表后追加数据说明行
