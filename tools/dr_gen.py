@@ -6,7 +6,7 @@ import re
 import sys
 
 from dr_check import check_encoding, load_profile
-from lang_config import get_lang_config, CHINESE_NUMERALS
+from lang_config import get_lang_config, CHINESE_NUMERALS, LANG_CONFIG
 
 
 # ── Source Extraction ─────────────────────────────────────────────────────
@@ -288,6 +288,21 @@ def convert_citations(report_path: str, datapool_path: str, output_path: str = N
     # Convert [N] → [(N)](#refN)
     BODY_CITE_RE = re.compile(r'(?<!!)\[(\d+)\](?!\()')
     new_content = BODY_CITE_RE.sub(r'[(\1)](#ref\1)', new_content)
+
+    # Clean up structural headings from other languages
+    foreign_headings = set()
+    for code, lcfg in LANG_CONFIG.items():
+        if code == lang:
+            continue
+        foreign_headings.add(lcfg['refs_prefix'])
+        foreign_headings.add(lcfg['disclaimer_title'])
+        foreign_headings.add(lcfg['toc_heading'])
+    for heading in foreign_headings:
+        pattern = re.compile(
+            rf'^{re.escape(heading)}\s*$.*?(?=\n## |\Z)',
+            re.MULTILINE | re.DOTALL
+        )
+        new_content = pattern.sub('', new_content)
 
     # Write output
     output = output_path or report_path
