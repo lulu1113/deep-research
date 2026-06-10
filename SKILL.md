@@ -127,36 +127,53 @@ repository: https://github.com/hoolulu/deep-research
      → 读取 {TMPDIR}/task2_manifest.json，提取 source_count + fact_count + search_engine + fetch_method + engines + free_fallback + english_fallback + unique_domains
     → todowrite 标记完成
     → 向用户报告进度（使用 $LANG 语言）
-    7. ══ Task 3 Round 1 — 并行派发所有章节 ══
-    → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
-    → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
-    → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
-    → 读取 `{PROMPTSDIR}/task3_chapter_agent.md` 模板
-    → **一次性并行派发所有章节**：
-      - 初始化空列表 task_ids = []
-      - For N = 1 to chapters.length:
-        - 读取 outline.chapters[N] 的 title、sections
-        - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
-        - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号
-        - 调用 task(run_in_background=true) 并行派出每章
-        - 从 task 返回的元数据中提取 background_task_id（格式 bg_xxx），追加到 task_ids
-        - todowrite 标记该章 in_progress
-      - 将 task_ids 写入 {TMPDIR}/task3_bg_ids.json（持久化，防止主 agent 中断后丢失状态）
-      - 向用户报告："已并行派出 {N} 章，等待全部完成..."
-      - **结束 response，等待系统通知。仅当收到 [ALL BACKGROUND TASKS COMPLETE] 通知时，才继续到 Round 2。中间的单章完成通知忽略不处理。**
-      - **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
+     7. ══ Task 3 — 派发章节撰写 ══
+     → 读取 {TMPDIR}/outline.json 获取 chapters 数组；读取 {TMPDIR}/data-pool.json
+     → **读取 `profiles.json` 获取当前模式的 `max_chars`**，计算 `per_chapter_chars = max_chars ÷ chapters.length`
+     → 从 data-pool.json 提取所有唯一 (src, yr) 组合，按首次出现顺序预分配引用编号 [1], [2], [3]...，写入 {TMPDIR}/citation_map.json
+     → 读取 `{PROMPTSDIR}/task3_chapter_agent.md` 模板
+     → **平台检测并选择撰写模式**：
+       - 执行 `uname -s` 检测操作系统
+       - 输出包含 "Darwin" → macOS → 设 `$PLATFORM_MODE=serial`
+       - 否则 → 其他平台 → 设 `$PLATFORM_MODE=parallel`
+       - 向用户报告平台和采用的撰写模式（使用 $LANG 语言）
+       - **章节 agent 不做任何工具调用**（不跑 prepare-chapter、validate、manifest），只写文件
 
-    7b. ══ Task 3 Round 2 — 收集结果 + 失败重写 ══
-    → 读取 {TMPDIR}/task3_bg_ids.json 获取所有 background_task_id
-    → For 每个 bg_task_id in task_ids:
-      - 调用 background_output(task_id=bg_task_id) 收集章节结果
-    → 用 `read` 逐一确认 {TMPDIR}/chapters/chapter-{N}.md 是否存在且非空
-    → 如果有章节缺失或内容为空：
-      - 记录失败章节编号列表
-      - **串行重写**：对每个失败章节逐一重新派发 task(run_in_background=false)，同步等待完成
-      - 再次用 `read` 确认
-    → todowrite 标记每章 completed
-    → 向用户报告最终章节完成情况（使用 $LANG 语言）
+     → [serial mode — macOS omo workaround] 逐一串行撰写：
+       - For N = 1 to chapters.length:
+         - 读取 outline.chapters[N] 的 title、sections
+         - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
+         - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号
+         - 调用 task(run_in_background=false) 同步等待该章完成
+         - 用 `read` 确认 {TMPDIR}/chapters/chapter-{N}.md 存在且非空
+         - todowrite 标记该章 completed
+       - 向用户报告所有章节完成（使用 $LANG 语言）
+
+     → [parallel mode — 非 macOS] 并行派发：
+       - 初始化空列表 task_ids = []
+       - For N = 1 to chapters.length:
+         - 读取 outline.chapters[N] 的 title、sections
+         - 从 data-pool.json 中筛选该章 sub_questions 对应的事实条目
+         - **将事实直接嵌入 prompt**：每条事实前标注预分配的 `[N]` 编号
+         - 调用 task(run_in_background=true) 并行派出每章
+         - 从 task 返回的元数据中提取 background_task_id（格式 bg_xxx），追加到 task_ids
+         - todowrite 标记该章 in_progress
+       - 将 task_ids 写入 {TMPDIR}/task3_bg_ids.json（持久化，防止主 agent 中断后丢失状态）
+       - 向用户报告："已并行派出 {N} 章，等待全部完成..."（使用 $LANG 语言）
+       - **结束 response，等待系统通知。仅当收到 [ALL BACKGROUND TASKS COMPLETE] 通知时，才继续到 Round 2。中间的单章完成通知忽略不处理。**
+       - 然后进入 Round 2：
+
+       **Round 2 — 收集结果 + 失败重写**：
+       - 读取 {TMPDIR}/task3_bg_ids.json 获取所有 background_task_id
+       - For 每个 bg_task_id in task_ids:
+         - 调用 background_output(task_id=bg_task_id) 收集章节结果
+       - 用 `read` 逐一确认 {TMPDIR}/chapters/chapter-{N}.md 是否存在且非空
+       - 如果有章节缺失或内容为空：
+         - 记录失败章节编号列表
+         - **串行重写**：对每个失败章节逐一重新派发 task(run_in_background=false)，同步等待完成
+         - 再次用 `read` 确认
+       - todowrite 标记每章 completed
+       - 向用户报告最终章节完成情况（使用 $LANG 语言）
      8. ══ Task 4 — 验证 + 装配 + QA（**主 agent 直接执行**） ══
     → **Step 0 — 清理残留**：删除 reports/ 目录下所有 0 字节文件（前次装配失败的空壳）；创建 reports/$LANG/ 子目录（如果不存在）
     → **Step 1 — 批量验证**：`python {TOOLSDIR}/dr_tools.py validate-all-chapters --chapters-dir {TMPDIR}/chapters/ --chapters {chapter_count}`，内部 ThreadPoolExecutor 并行验证所有章节。从输出 JSON 的 `failed_chapters` 中找到失败章节，逐个重新生成（重新派发章节 agent → 重新验证该章）。
