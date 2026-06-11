@@ -14,7 +14,7 @@ repository: https://github.com/hoolulu/deep-research
 生成对标券商/第三方研究机构标准的深度调研报告。
 
 - **架构**：主 agent 调度 4 个子 agent Task（大纲/数据/预检/装配）+ 1 轮主控并行派发章节，中间数据走临时文件
-- **数据源**：在线模式 → SearXNG（自建 Layer 1 主力）+ Exa（Layer 2 备用）并行搜索 → 按质量触发免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
+- **数据源**：在线模式 → SearXNG（Layer 1） + sources.json 优质源搜索（Layer 2）并行 → 按质量触发免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
 - **安装**：见下方「安装与配置」
 - **输出**：`$TMPDIR/outline.json`（临时，非最终报告）
 - **最终报告**：保存到 skill 目录下的 `reports/`
@@ -45,7 +45,7 @@ repository: https://github.com/hoolulu/deep-research
 
 ### 时间锚定规则
 
-所有主题默认以 `{CURRENT_YEAR}` 为目标搜索最新数据。时间锚定模式在 Task 1 中由 oracle 按以下规则判定：
+所有主题默认以 `{CURRENT_YEAR}` 为目标搜索最新数据。时间锚定模式在 Task 1 中由大纲 agent 按以下规则判定：
 
 | 模式 | 符号 | 判定条件 | target_year | 验收 |
 |:----|:-----|:---------|:-----------|:-----|
@@ -106,13 +106,12 @@ repository: https://github.com/hoolulu/deep-research
     → 正常模式 → `offline_mode=false`
  2. 记录任务开始时间到 {TMPDIR}/start_time.txt
  3. todowrite 创建进度条目（使用 $LANG 语言）
- 4. ══ Task 1 — 分析主题 + 生成大纲 ══
-    → 读取 {PROMPTSDIR}/task1_oracle.md，替换 {TMPDIR} {TOOLSDIR} {LANG}，注入 prompt
-    → **只做变量替换，不添加语言、格式、报告结构等额外指令。语言已由 Step 0 判定为 $LANG 并在 prompt 中替换 {LANG}。**
-    → 等待返回 oracle 回答
-    → 从回答中提取 outline.json 内容
-    → 用 `write` 工具创建 {TMPDIR}/outline.json（注入 `"language": "$LANG"`）
-    → 从 outline.json 读取 title + chapter_count + depth_mode
+  4. ══ Task 1 — 分析主题 + 生成大纲 ══
+     → 读取 {PROMPTSDIR}/task1_outline.md，替换 {TMPDIR} {TOOLSDIR} {LANG} {CURRENT_YEAR}，注入 prompt
+     → **只做变量替换，不添加语言、格式、报告结构等额外指令。语言已由 Step 0 判定为 $LANG 并在 prompt 中替换 {LANG}。**
+     → 派发 task()，等待完成
+     → 用 `read` 确认 {TMPDIR}/outline.json 存在
+     → 从 outline.json 读取 title + chapter_count + depth_mode
     → todowrite 标记完成
     → 向用户报告进度（使用 $LANG 语言）
   6. ══ Task 2 — 数据收集 + 结构化数据池 ══
@@ -231,7 +230,7 @@ repository: https://github.com/hoolulu/deep-research
       IF offline_mode=true:
         <搜索词>：{offline_$LANG}
       ELSE:
-        engines_names = engines 数组元素大写（["searxng","exa"] → "SearXNG+Exa"）
+        engines_names = engines 数组元素大写（["searxng"] → "SearXNG"）
         desc = engines_names
         IF free_fallback=true: desc += " (+{free_fallback_$LANG})"
         IF english_fallback=true: desc += " (+EN)"
@@ -271,13 +270,13 @@ repository: https://github.com/hoolulu/deep-research
 
 ---
 
-## 2. Task 1 — 主题分析 + 大纲（oracle）
+## 2. Task 1 — 主题分析 + 大纲
 
-**工具**：`task(subagent_type="oracle", ...)` | **一次调用**
-**prompt 文件**：`prompts/task1_oracle.md`
-**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR} {LANG}` 为实际路径后注入 prompt。
+**工具**：`task()` | **一次调用**
+**prompt 文件**：`prompts/task1_outline.md`
+**用法**：读取文件内容，替换 `{TMPDIR}` `{TOOLSDIR} {LANG} {CURRENT_YEAR}` 为实际值后注入 prompt。
 
-**输出**：oracle 在回答中以 JSON 代码块输出大纲内容，主 agent 使用 `write` 工具创建 `{TMPDIR}/outline.json`（同时注入 `"language"` 字段）。
+**输出**：大纲 agent 直接用 `write` 工具创建 `{TMPDIR}/outline.json`。主 agent 通过 `read` 确认文件存在。
 
 ---
 
@@ -359,7 +358,6 @@ Task 4 装配 + QA 通过后，内部已完成清理：
 | 工具 | 用途 | 免费？ | 国内源？ |
 |:----|:-----|:-----:|:--------:|
 | SearXNG (webfetch) | 主搜索引擎（Layer 1，自建） | ✅ 自建零费用 | ✅ 70+引擎含百度/搜狗 |
-| `websearch_web_search_exa` | 备用搜索引擎（Layer 2） | ❌ 付费 | 部分 |
 | `scrapling_bulk_get/stealthy/fetch` | 全文抓取（MCP，依赖 opencode.json 注册） | ✅ | **✅ 推荐，国内源主力** |
 | `webfetch` | 抓取回退（Scrapling 不可用时替代） | ✅ | ❌ 远端受限，国内源效果一般 |
 | `bash` | date 时间戳 / 文件操作 | ✅ | — |
@@ -367,7 +365,7 @@ Task 4 装配 + QA 通过后，内部已完成清理：
 
 **搜索链路**：
 ```
-SearXNG（Layer 1 自建主力，70+引擎） + Exa（Layer 2 备用）并行搜索
+SearXNG（Layer 1 自建主力，70+引擎） + sources.json 优质源搜索（Layer 2）并行
      ↓ 搜索结果质量不足时触发
 免费源补强（Layer 3 兜底）
      ↓
