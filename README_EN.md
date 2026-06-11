@@ -126,11 +126,11 @@ Layer 3 — Free source reinforcement (fallback)
 
 ## 7. Three Depth Modes
 
-| Command | Purpose | Min chapters | Min paragraphs/chapter | Max chars | Est. time |
-|---------|---------|-------------|----------------------|-----------|-----------|
-| `/research <topic>` | standard (default) | 8 | ≥ 5 | ≤ 15,000 | ~10–15 min |
-| `/research <topic> -quick` | Quick insight | 5 | ≥ 4 | ≤ 10,000 | ~8–12 min |
-| `/research <topic> -deep` | Maximum depth | 10 | ≥ 6 | ≤ 30,000 | ~15–25 min |
+| Command | Purpose | Min chapters | Min paragraphs/chapter | Target chars | Est. time |
+|---------|---------|-------------|----------------------|--------------|-----------|
+| `/research <topic>` | standard (default) | 8 | ≥ 5 | ≈ 25,000 | ~10–15 min |
+| `/research <topic> -quick` | Quick insight | 5 | ≥ 4 | ≈ 15,000 | ~8–12 min |
+| `/research <topic> -deep` | Maximum depth | 10 | ≥ 6 | ≈ 45,000 | ~15–25 min |
 
 > Parameters in `profiles.json`, restart to apply. Char count excludes whitespace and Markdown syntax.
 
