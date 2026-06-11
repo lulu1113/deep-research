@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""Scan reports/ and generate gh-pages index (index.html + reports.json)."""
-import os, json, re
+"""Scan reports/ and generate gh-pages index (index.html + reports.json).
+
+Local mode:  python tools/generate_pages.py
+API mode:    python tools/generate_pages.py --api
+               (fetches files via GitHub API, no git checkout needed)
+"""
+import os, json, re, sys, base64, urllib.request
 from datetime import datetime, timezone
 
 REPORTS_DIR = 'reports'
@@ -14,47 +19,60 @@ LANG_NAMES = {
     'th': 'ไทย', 'tr': 'Türkçe', 'pl': 'Polski',
 }
 MODE_LABELS = {'quick': 'Quick', 'standard': 'Standard', 'deep': 'Deep'}
+API_BASE = 'https://api.github.com'
 
 
-def _meta(text):
-    mode, wc = 'standard', 0
-    if not text:
-        return mode, wc
-    m = re.search(r'(?:调研模式|Mode|mode|Modo|モード|모드|Modus|Режим|الوضع|मोड|Chế độ)\s*[:：]\s*(\w+)', text)
-    if m:
-        mode = m.group(1).lower()
-    for p in [
-        r'(?:字数|总字数|文字数|글자|عدد الكلمات|शब्द|Số từ|จำนวนคำ)\s*[:：]\s*([\d,]+)',
-        r'(?:Word Count|Wortanzahl|Contagem|Recuento|Kelime|Jumlah kata)\s*[:：]?\s*([\d,]+)',
-    ]:
-        m = re.search(p, text, re.IGNORECASE)
-        if m:
-            wc = int(m.group(1).replace(',', ''))
-            break
-    return mode, wc
+def _api_get(path):
+    """GitHub API GET request. Uses GITHUB_TOKEN env var."""
+    token = os.environ.get('GITHUB_TOKEN', '')
+    repo = os.environ.get('GITHUB_REPOSITORY', 'hoolulu/deep-research')
+    url = f'{API_BASE}/repos/{repo}/{path}'
+    req = urllib.request.Request(url)
+    req.add_header('Accept', 'application/vnd.github.v3+json')
+    if token:
+        req.add_header('Authorization', f'Bearer {token}')
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode())
 
 
-def parse_report(path):
-    with open(path, encoding='utf-8') as f:
-        c = f.read()
-    t = re.search(r'^# (.+)', c)
+def parse_content(content: str, path: str) -> dict:
+    """Parse a report's markdown content into metadata dict."""
+    t = re.search(r'^# (.+)', content)
     title = t.group(1).strip() if t else os.path.basename(path)
-    rel = os.path.relpath(path, REPORTS_DIR)
-    lang = rel.split(os.sep)[0]
+    rel = path.replace('\\', '/')
+    lang = rel.split('/')[1] if rel.startswith('reports/') else 'en'
     d = re.search(r'(\d{4})(\d{2})(\d{2})', path)
     date = f'{d.group(1)}-{d.group(2)}-{d.group(3)}' if d else ''
-    mm = re.search(r'> \*\*(?:元数据|Metadata|メタデータ|메타데이터|Metadatos|Métadonnées|Metadaten|Metadados|Metadati)\*\*[:：]\s*(.+)', c)
-    mode, wc = _meta(mm.group(1) if mm else '')
+    mm = re.search(r'> \*\*(?:元数据|Metadata|メタデータ|메타데이터|Metadatos|Métadonnées|Metadaten|Metadados|Metadati)\*\*[:：]\s*(.+)', content)
+    mode, wc = 'standard', 0
+    if mm:
+        mt = mm.group(1)
+        m = re.search(r'(?:调研模式|Mode|mode|Modo|モード|모드|Modus|Режим|الوضع|मोड|Chế độ)\s*[:：]\s*(\w+)', mt)
+        if m:
+            mode = m.group(1).lower()
+        for p in [
+            r'(?:字数|总字数|文字数|글자|عدد الكلمات|शब्द|Số từ|จำนวนคำ)\s*[:：]\s*([\d,]+)',
+            r'(?:Word Count|Wortanzahl|Contagem|Recuento|Kelime|Jumlah kata)\s*[:：]?\s*([\d,]+)',
+        ]:
+            m = re.search(p, mt, re.IGNORECASE)
+            if m:
+                wc = int(m.group(1).replace(',', ''))
+                break
     if wc == 0:
-        wc = len(re.sub(r'\s+', '', c))
+        wc = len(re.sub(r'\s+', '', content))
     src = 0
-    sm = re.search(r'(?:共引用|Total|Totalt|Totale|総計|合计|总共|합계|إجمالي|कुल|Tổng|Total de)\s+(\d+)\s*(?:个来源|sources|件の出典|개 출처|fuentes|fontes|Bronnen|källor|источников|مصدرًا|स्रोत|nguồn|sumber|แหล่งที่มา|kaynak|źródeł|fonti)', c)
+    sm = re.search(
+        r'(?:共引用|Total|Totalt|Totale|総計|合计|总共|합계|إجمالي|कुल|Tổng|Total de)\s+(\d+)\s*'
+        r'(?:个来源|sources|件の出典|개 출처|fuentes|fontes|Bronnen|källor|источников|'
+        r'مصدرًا|स्रोत|nguồn|sumber|แหล่งที่มา|kaynak|źródeł|fonti)', content)
     if sm:
         src = int(sm.group(1))
     else:
-        a = re.findall(r'<a id="ref(\d+)"></a>', c)
+        a = re.findall(r'<a id="ref(\d+)"></a>', content)
         src = max(int(x) for x in a) if a else 0
-    return {'title': title, 'path': rel, 'lang': lang, 'lang_name': LANG_NAMES.get(lang, lang), 'mode': mode, 'word_count': wc, 'date': date, 'sources': src}
+    return {'title': title, 'path': rel, 'lang': lang,
+            'lang_name': LANG_NAMES.get(lang, lang),
+            'mode': mode, 'word_count': wc, 'date': date, 'sources': src}
 
 
 def fmt(n):
@@ -116,15 +134,32 @@ def gen_favicon():
 
 
 def main():
+    api_mode = '--api' in sys.argv
     reports = []
-    for root, dirs, files in os.walk(REPORTS_DIR):
-        for fname in sorted(files):
-            if not fname.endswith('.md'):
-                continue
+    if api_mode:
+        print('Fetching via GitHub API...')
+        tree = _api_get('git/trees/main?recursive=1')
+        items = [i for i in tree.get('tree', [])
+                 if i['path'].startswith('reports/') and i['path'].endswith('.md')]
+        for item in items:
             try:
-                reports.append(parse_report(os.path.join(root, fname)))
+                resp = _api_get(f'contents/{item["path"]}')
+                text = base64.b64decode(resp['content']).decode('utf-8')
+                reports.append(parse_content(text, item['path']))
+                print(f'  {item["path"]}')
             except Exception as e:
-                print(f'Skip {fname}: {e}')
+                print(f'  SKIP {item["path"]}: {e}')
+    else:
+        for root, dirs, files in os.walk(REPORTS_DIR):
+            for fname in sorted(files):
+                if not fname.endswith('.md'):
+                    continue
+                path = os.path.join(root, fname)
+                try:
+                    with open(path, encoding='utf-8') as f:
+                        reports.append(parse_content(f.read(), path))
+                except Exception as e:
+                    print(f'  SKIP {fname}: {e}')
     reports.sort(key=lambda r: r['date'], reverse=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(os.path.join(OUTPUT_DIR, 'reports.json'), 'w', encoding='utf-8') as f:

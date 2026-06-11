@@ -9,21 +9,17 @@ on:
 permissions:
   contents: write
 
-env:
-  GIT_LFS_SKIP_SMUDGE: 1
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - run: git config --global core.longpaths true
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: python tools/generate_pages.py
+      - run: python tools/generate_pages.py --api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
