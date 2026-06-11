@@ -5,6 +5,8 @@
 **深度调研报告生成 Skill · 支持 19 种语言输出**
 
 > **当前版本：** [查看更新](https://github.com/hoolulu/deep-research/commits/main)
+>
+> 📂 **[浏览所有报告 →](https://hoolulu.github.io/deep-research/)** 可筛选、排序、按语言和类型浏览所有报告。
 
 ---
 
@@ -66,8 +68,6 @@ AI 编数字 → 看起来合理，但找不到来源。
 
 
 > 以上为 standard 模式典型范围，实际因主题复杂度、数据可获取性、搜索引擎响应等因素有所浮动。|
-
-📂 **[查看全部报告 →](https://hoolulu.github.io/deep-research/)** 可筛选、排序、按语言和类型浏览所有报告。
 
 ### 📖 精选报告展示
 

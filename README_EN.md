@@ -5,6 +5,8 @@
 **Professional deep research report generation Skill · Supports 19 languages**
 
 > **Current version:** [View updates](https://github.com/hoolulu/deep-research/commits/main)
+>
+> 📂 **[Browse all reports →](https://hoolulu.github.io/deep-research/)** — filter, sort, and browse by language and depth.
 
 ---
 
@@ -61,8 +63,6 @@ People who need professional-grade research capabilities without relying on paid
 | Total time | ~10-20 min |
 
 > Above ranges for standard mode. Actual times vary by topic complexity and data availability.
-
-📂 **[Browse all reports →](https://hoolulu.github.io/deep-research/)** — filter, sort, and browse by language and depth.
 
 ### 📖 Featured Reports
 
@@ -233,8 +233,6 @@ Reports are saved as Markdown files in the skill's `reports/` directory, with da
 Open with any Markdown reader (Typora / Obsidian / VS Code etc.).
 
 You can also specify a custom output path — ask AI to configure it.
-
-👉 **[Browse all reports](https://hoolulu.github.io/deep-research/)** — filter, sort, and browse the full library.
 
 ## 11. Cost
 
