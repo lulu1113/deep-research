@@ -14,7 +14,7 @@ repository: https://github.com/hoolulu/deep-research
 生成对标券商/第三方研究机构标准的深度调研报告。
 
 - **架构**：主 agent 调度 4 个子 agent Task（大纲/数据/预检/装配）+ 1 轮主控并行派发章节，中间数据走临时文件
-- **数据源**：在线模式 → SearXNG（Layer 1） + sources.json 优质源搜索（Layer 2）并行 → 按质量触发免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
+- **数据源**：在线模式 → CLI 内置引擎（Layer 0，如有）+ SearXNG（Layer 1） + sources.json 优质源搜索（Layer 2）并行 → 按质量触发免费源补强（Layer 3 兜底）→ Scrapling 批量抓取；离线模式 → 用户指定的本地文件（md/txt/pdf/docx）
 - **安装**：见下方「安装与配置」
 - **输出**：`$TMPDIR/outline.json`（临时，非最终报告）
 - **最终报告**：保存到 skill 目录下的 `reports/`
@@ -88,7 +88,7 @@ repository: https://github.com/hoolulu/deep-research
    → Do NOT output anything during this step.
  → Write language code: use `write` tool to create {TMPDIR}/language.txt with the ISO code
  → Set `$LANG` = language code from the step above
-  → **从这一行开始，所有面向用户的输出必须使用 $LANG。SKILL.md 的指令是中文写的（为了让我读懂），但你的输出绝不能跟着用中文。你读到中文指令时意识上翻译一下再输出。**
+   → **从这一行开始，所有面向用户的输出必须使用 $LANG 语言（不在 $LANG 列表中时默认 en）。SKILL.md 的指令文本不论用什么语言写的，只是供你阅读的上下文；实际输出以 $LANG 为准——你是读到中文指令后意识上翻译成 $LANG 再输出。**
   → Announce detected language to the user (single line, in $LANG, e.g. "🌐 Language detected: en")
 
 ══ 主流程 ══
@@ -342,23 +342,34 @@ Task 4 装配 + QA 通过后，内部已完成清理：
 
 | 工具 | 用途 | 免费？ | 国内源？ |
 |:----|:-----|:-----:|:--------:|
-| SearXNG (webfetch) | 主搜索引擎（Layer 1，自建） | ✅ 自建零费用 | ✅ 70+引擎含百度/搜狗 |
+| `websearch` | **主力**搜索引擎（CLI 内置 Exa，运行时探测） | ✅ 共享免费（Exa） | ❌ 国外引擎 |
+| `searxng` | 搜索引擎（自定义 SearXNG，运行时探测） | ✅ 自建零费用 | ✅ 70+引擎含百度/搜狗 |
+| 其他搜索引擎 | 不同 CLI 工具的内置搜索（运行时自动适配） | 取决于环境 | — |
 | `scrapling_bulk_get/stealthy/fetch` | 全文抓取（MCP，依赖 opencode.json 注册） | ✅ | **✅ 推荐，国内源主力** |
 | `webfetch` | 抓取回退（Scrapling 不可用时替代） | ✅ | ❌ 远端受限，国内源效果一般 |
 | `bash` | date 时间戳 / 文件操作 | ✅ | — |
 | `write` | 写文件 | ✅ | — |
 
+搜索策略由 agent 在运行时根据工具集**自动适配**，不依赖预设的搜索引擎配置。
+
 **搜索链路**：
 ```
-SearXNG（Layer 1 自建主力，70+引擎） + sources.json 优质源搜索（Layer 2）并行
-     ↓ 搜索结果质量不足时触发
-免费源补强（Layer 3 兜底）
-     ↓
-A类搜索（DuckDuckGo/Bing/Semantic Scholar/GDELT via webfetch）
-     → B类国内源（百度百科/199IT/艾瑞/东方财富/知乎/国统局）
-     → 全部 URL → 检测 Scrapling MCP 可用性
-         ├─ 🔧 可用 → Scrapling 批量抓取全文 → 数据池
-         └─ 🌐 不可用 → webfetch 逐个抓取全文（标注回退）→ 数据池
+Layer 0 — CLI 内置引擎探测（扫描可用工具集）
+  │
+  ├─ 发现内置引擎 → 作为主力搜索，与后续层并行
+  └─ 未发现 → 跳过此层，不影响后续
+
+Layer 1 — 大纲建议源（SearXNG site:定向搜索）+ Layer 2 — SearXNG 全网补充搜索 并行
+         ↓
+Layer 3 — sources.json 优质源搜索（并行）
+         ↓
+搜索结果质量评估（Step 3 质量门）
+  ├─ 达标 → 直接进入抓取
+  └─ 不达标 → Layer 4 免费源补强（A/B 类源 + 区域引擎）
+         ↓
+全部 URL → 检测 Scrapling MCP 可用性
+    ├─ 🔧 可用 → Scrapling 批量抓取全文 → 数据池
+    └─ 🌐 不可用 → webfetch 逐个抓取全文（标注回退）→ 数据池
 ```
 
 ---

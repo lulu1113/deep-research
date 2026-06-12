@@ -94,10 +94,11 @@ The pipeline runs in 4 automated stages:
 
 ## 5. Search Pipeline & Built-in Resources
 
-All tools are built-in, no additional purchase needed. The system uses a **2-layer + quality-triggered reinforcement** strategy: SearXNG (author-deployed, 70+ engines incl. Baidu/Google/Brave) and sources.json quality sources are searched in **parallel** — results are merged and deduplicated. Free source reinforcement is triggered only when search result quality is insufficient (< 3 URLs per sub-question / outdated results / too few sources).
+All tools are built-in, no additional purchase needed. The system uses a **CLI built-in engine + SearXNG + quality-triggered reinforcement** strategy: CLI built-in search (Layer 0, auto-detected at runtime, e.g., OpenCode's Exa websearch) runs as primary along with SearXNG (Layer 1, author-deployed, 70+ engines incl. Baidu/Google/Brave) and sources.json (Layer 2, 30+ curated quality sources) — all searched in **parallel** — results are merged and deduplicated. Free source reinforcement (Layer 3) is triggered only when search result quality is insufficient (< 3 URLs per sub-question / outdated results / too few sources).
 
 ```
-SearXNG (Layer 1, author-deployed primary, 70+ engines, ready out of the box)
+Layer 0 — CLI built-in engine (auto-detected at runtime, e.g., OpenCode Exa websearch)
+  + SearXNG (Layer 1, author-deployed primary, 70+ engines, ready out of the box)
   + sources.json (Layer 2, 30+ curated sources)
   ∥ parallel search, results merged & deduplicated
   ↓ triggered when search quality is insufficient
@@ -247,8 +248,9 @@ You can also specify a custom output path — ask AI to configure it.
 
 **1. Search quotas? How to ensure uninterrupted searching?**
 
-The system uses a **2-layer + free source fallback** search architecture, each layer independent, auto-degrades on failure:
+The system uses a **CLI built-in engine + SearXNG + free source fallback** search architecture, each layer independent, auto-degrades on failure:
 
+- **Layer 0 — CLI built-in engine (new)**: Auto-detects the CLI tool's built-in search engine at runtime (e.g., OpenCode's Exa websearch). If available, used as primary, runs in parallel with subsequent layers. No additional configuration needed.
 - **Layer 1 — SearXNG (author-deployed)**: Meta-search engine aggregating 70+ engines (Baidu/Google/Brave), full coverage of Chinese and English. Built-in endpoint, ready out of the box, unlimited, no rate limits.
 - **Layer 2 — sources.json quality sources**: 30+ curated sources (Semantic Scholar / arXiv / Nature / World Bank / IMF / Reuters / BBC / Baidu Baike / Zhihu / 36Kr / iResearch / East Money etc.). Auto health check on startup, dead sources skipped.
 - **Layer 3 — Free source reinforcement (final fallback)**: DuckDuckGo / Bing / Brave / Mojeek / Semantic Scholar / GDELT / arXiv + 20+ Chinese sources. No API keys required, always available.
