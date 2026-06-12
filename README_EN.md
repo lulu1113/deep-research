@@ -16,9 +16,9 @@
 |---|---|
 | 🎯 **One command** | `/research <topic>` → fully automated research, zero manual intervention |
 | ⏱ **Report in ~10 min** | quick mode ~8–12 min, standard ~10–15 min |
-| 📁 **Local file research** | Supports PDF/DOCX/TXT/MD, no internet needed, auto-parsed |
 | 🌍 **19 languages** | Auto-detects topic language, generates report in the same language |
 | 🔧 **Not OpenCode-exclusive** | Adaptable for Claude Code, Cursor, Codex CLI, Windsurf, Cline and more |
+| 📁 **Local file research** | Also supports PDF/DOCX/TXT/MD, no internet needed, auto-parsed |
 
 | Command | Output |
 |---------|--------|
