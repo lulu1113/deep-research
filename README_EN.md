@@ -19,6 +19,7 @@
 | 🌍 **19 languages** | Auto-detects topic language, generates report in the same language |
 | 🔧 **Not OpenCode-exclusive** | Adaptable for Claude Code, Cursor, Codex CLI, Windsurf, Cline and more |
 | 📁 **Local file research** | Also supports PDF/DOCX/TXT/MD, no internet needed, auto-parsed |
+| 🖥️ **Local report browser** | Auto-refreshed after each run: `reports-browser/index.html`, with search/filter/preview |
 
 | Command | Output |
 |---------|--------|
@@ -232,9 +233,7 @@ Open with any Markdown reader (Typora / Obsidian / VS Code etc.).
 
 You can also specify a custom output path — ask AI to configure it.
 
-**Local report browser page**: After each research run, AI also auto-refreshes `reports-browser/index.html`. Open it directly in your browser (file:// protocol works) — all reports displayed in a searchable, filterable table with click-to-preview modal.
-
-> 📂 **[Browse all sample reports →](https://hoolulu.github.io/deep-research/)** — filter, sort, and browse by language and depth.
+**Local report browser page**: After each research run, AI auto-refreshes `reports-browser/index.html`. Open it directly in your browser (file:// protocol works) — all reports displayed in a searchable, filterable table with click-to-preview modal.
 
 ## 11. FAQ
 
