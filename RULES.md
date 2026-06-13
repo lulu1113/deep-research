@@ -24,6 +24,7 @@
 | **来源稀缺** | 连续 3 不同域名 404 → 2 分钟上限 | 阶段2 |
 | **不重复** | 每个新子问题前检查数据池已有内容 | 阶段2 Step 5（数据提取） |
 | **来源多样性硬线** | 补强触发条件：总独立来源 < 8，或全部 URL 集中在 ≤3 个域名（数量够但多样性不足） | 阶段2 Step 3（补强条件） |
+| **数据时序分类** | 每条 fact 必须标注 `data_type`（actual/estimate/forecast）。若该指标的官方发布日在报告生成日之后，自动标记为 estimate 或 forecast | 阶段2 数据池 |
 
 ## 章节与装配规范
 
@@ -41,6 +42,7 @@
 | **报告尾部** | 末尾固定包含参考来源章节（语言对应，如 `## 参考来源`/`## References`）和免责声明（语言对应，如 `## 免责声明`/`## Disclaimer`） | 阶段5 QA 检查末尾 20 行 |
 | **TOC 标题唯一** | 报告有且仅有一个 TOC 标题（语言对应，如 `## 目录`/`## Table of Contents`/`## 목차`） | 阶段5 QA `python dr_tools.py check-toc --lang $LANG` |
 | **乱码零容忍** | data-pool.json 和最终报告均不得含替换字符（\ufffd）或典型 Mojibake 模式或 `???` 连续问号 | Task 2 Step 6 + 阶段5 QA grep |
+| **预测值措辞限定** | 引用 data_type=estimate 或 forecast 的事实，正文必须使用"预估""预计""预测"等限定词，不得作为既定事实陈述。章节 agent 和装配阶段均需检查 | 阶段4 chapter agent prompt + 阶段5 QA |
 | **纯文本公式** | 报告不得使用 LaTeX/math 语法（`$...$` 等），全部用纯文本表达 | 阶段4 prompt + 阶段5 验收 |
 | **路径核验** | 最终报告必须保存在 skill 默认目录或用户自定义目录，两者之一 | 阶段5 QA 检查 |
 | **编码洁净** | 所有中间文件（outline.json / data-pool.json / chapter-*.md）必须使用 UTF-8 无 BOM 编码写入，不得出现替换字符（\ufffd）或 GBK→UTF-8 Mojibake。子 agent 写入前自行校验，不得遗留到主 agent | 阶段1/2/3/5 各输出环节 |

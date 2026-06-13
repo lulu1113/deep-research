@@ -93,7 +93,7 @@ python {TOOLSDIR}/dr_tools.py year-density <报告> --target-year N # 年份
 QA 通过后，运行以下命令更新本地报告浏览器页面（将 reports/ 下所有报告打包为 JS 数据，生成可离线浏览的列表页）：
 
 ```bash
-python {TOOLSDIR}/generate_pages.py --local
+python {TOOLSDIR}/generate_pages.py --local  # 脚本已用 __file__ 锚定，不再依赖 CWD
 ```
 
 ## Step 5 — 清理
