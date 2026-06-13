@@ -232,6 +232,8 @@ Open with any Markdown reader (Typora / Obsidian / VS Code etc.).
 
 You can also specify a custom output path — ask AI to configure it.
 
+**Local report browser page**: After each research run, AI also auto-refreshes `reports-browser/index.html`. Open it directly in your browser (file:// protocol works) — all reports displayed in a searchable, filterable table with click-to-preview modal.
+
 > 📂 **[Browse all sample reports →](https://hoolulu.github.io/deep-research/)** — filter, sort, and browse by language and depth.
 
 ## 11. FAQ
