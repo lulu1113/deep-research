@@ -703,67 +703,7 @@ def _infer_data_type(fact: dict) -> str:
     return 'actual'
 
 
-def _build_verdict(stats: dict, lang: str = 'zh') -> str:
-    """Return dynamic assessment opinion citing actual stats."""
-    if lang == 'zh':
-        parts = []
-        fact = f'共 {stats["total_facts"]} 条事实'
-        if stats['total_facts'] > 0:
-            fact += f'，高置信占 {stats["high_pct"]}%'
-        fact += f'，已公布 {stats["act_pct"]}% · 估算 {stats["est_pct"]}% · 预测 {stats["fct_pct"]}%'
-        if stats['total_subq'] > 0:
-            fact += f'。{stats["total_subq"]} 个子问题中 {stats["adequate"]} 个覆盖充足'
-        parts.append(fact)
 
-        j = []
-        act, est_fcst = stats['act_pct'], stats['est_pct'] + stats['fct_pct']
-        high = stats['high_pct']
-
-        if act >= 60 and high >= 70:
-            j.append('已公布数据占主导，整体可信度高')
-        elif act < 30 and stats.get('academic_src_pct', 0) > 50:
-            j.append('史料重建/估算占比高属该类题目常态')
-        elif act < 40 and est_fcst >= 50:
-            j.append('估算与预测占比较高，结论需结合具体语境')
-        elif 40 <= act < 60:
-            j.append('已公布与估算并存，宜作参考性结论')
-        else:
-            j.append('数据类型分布均衡，整体可信')
-
-        if stats['data_limited']:
-            j.append('部分子问题数据覆盖不足')
-        if high < 50:
-            j.append('高置信来源偏少')
-        parts.append('；'.join(j))
-    else:
-        parts = []
-        fact = f'{stats["total_facts"]} facts'
-        if stats['total_facts'] > 0:
-            fact += f', {stats["high_pct"]}% high-confidence'
-        fact += f' — {stats["act_pct"]}% actual / {stats["est_pct"]}% estimate / {stats["fct_pct"]}% forecast'
-        if stats['total_subq'] > 0:
-            fact += f'. {stats["adequate"]}/{stats["total_subq"]} sub-questions adequately covered'
-        parts.append(fact)
-
-        j = []
-        if stats['act_pct'] >= 60 and stats['high_pct'] >= 70:
-            j.append('Actual data dominates — overall reliability is high')
-        elif stats['act_pct'] < 30 and stats.get('academic_src_pct', 0) > 50:
-            j.append('Reconstructed/estimated data is expected for this topic type')
-        elif stats['act_pct'] < 40 and (stats['est_pct'] + stats['fct_pct']) >= 50:
-            j.append('Estimates and forecasts are significant — interpret in context')
-        elif 40 <= stats['act_pct'] < 60:
-            j.append('Mix of actual and estimated data — suitable as reference')
-        else:
-            j.append('Balanced data type distribution — generally reliable')
-
-        if stats['data_limited']:
-            j.append('Partial data coverage is limited')
-        if stats['high_pct'] < 50:
-            j.append('Low proportion of high-confidence sources')
-        parts.append('; '.join(j))
-
-    return '\n\n'.join(parts)
 
 
 def generate_confidence_section(datapool_path: str, manifest_path: str,
@@ -923,25 +863,6 @@ def generate_confidence_section(datapool_path: str, manifest_path: str,
         lines.append(f"**{rating_label}**：{label_verdict}（{score}/100）")
         lines.append('')
 
-        # ── 8. Dynamic assessment opinion ──
-        verdict = _build_verdict({
-            'total_facts': total_facts,
-            'high_pct': high_pct,
-            'act_pct': act_pct,
-            'est_pct': est_pct,
-            'fct_pct': fct_pct,
-            'adequate': adequate,
-            'total_subq': total_subq,
-            'data_limited': data_limited,
-            'score': score,
-            'verdict_label': label_verdict,
-            'academic_src_pct': academic_src_pct,
-        }, lang)
-        assessment_label = '评估意见' if lang == 'zh' else 'Assessment'
-        lines.append(f"**{assessment_label}**：")
-        lines.append('')
-        lines.append(verdict)
-        lines.append('')
     else:
         score = 0
         label_verdict = '无数据' if lang == 'zh' else 'No data'
@@ -956,14 +877,24 @@ def generate_confidence_section(datapool_path: str, manifest_path: str,
 
     section = '\n'.join(lines)
 
-    # ── Machine-readable summary ──
+    # ── Machine-readable summary (language-agnostic, numbers only) ──
     coverage_summary = manifest.get('coverage_summary', 'unknown')
+    adequate_subq = adequate
+    total_subq_count = total_subq
     summary = {
         'coverage': coverage_summary,
+        'total_facts': total_facts,
         'high_pct': high_pct if total_facts > 0 else 0,
+        'medium_pct': round(medium / total_facts * 100) if total_facts > 0 else 0,
+        'low_pct': round(low / total_facts * 100) if total_facts > 0 else 0,
         'actual_pct': act_pct if total_facts > 0 else 0,
         'est_pct': est_pct if total_facts > 0 else 0,
+        'fct_pct': fct_pct if total_facts > 0 else 0,
+        'auth_pct': academic_src_pct,
         'data_limited': data_limited,
+        'controversies': controversies_total,
+        'adequate_subq': adequate_subq,
+        'total_subq': total_subq_count,
         'verdict_label': label_verdict if total_facts > 0 else ('无数据' if lang == 'zh' else 'No data'),
         'score': score,
     }
