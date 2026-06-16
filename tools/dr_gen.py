@@ -109,7 +109,7 @@ def generate_metadata(word_count: int, reading_time: int, data_until: str,
     return {
         "metadata_line": line1,
         "source_line": line2,
-        "full_block": line1 + '\n' + line2,
+        "full_block": line1 + '\n>\n' + line2,
     }
 
 
