@@ -2,7 +2,13 @@
 
 <p align="center"><a href="README.md">中文</a> · <b>English</b></p>
 
-**Professional deep research report generation Skill — One command, ten minutes, multi-language, one in-depth professional report**
+**Deep Research Report Generation Skill — One command, ten minutes, institutional-grade deep research report**
+
+Multi-agent autonomous search, scrape, write, and QA — feed it a topic, get a citable, browsable, exportable research report in Chinese or 19 other languages.
+
+Benchmarked against institutional research structure: conclusions-first, traceable sources, counter-arguments, scenario forecasting. Supports quick / standard / deep tiers, with automatic language detection across 19 languages.
+
+Built for industry research, trend foresight, competitive scanning, policy analysis, technology deep-dives, and investment memos — not a handful of search summaries, but a report you can actually use.
 
 > **Current version:** [View updates](https://github.com/hoolulu/deep-research/commits/main)
 >
