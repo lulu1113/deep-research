@@ -234,13 +234,15 @@ def convert_citations(report_path: str, datapool_path: str, output_path: str = N
         for fact in rec.get('facts') or []:
             inst = fact.get('src', '').strip()
             yr = fact.get('yr', '')
-            key = (inst, yr)
-            if key not in seen and inst and yr:
-                seen.add(key)
-                ordered_refs.append(key)
             url = fact.get('url', '').strip()
             title = fact.get('title', '').strip()
-            if inst and yr and url:
+            if not inst or not yr:
+                continue
+            key = (inst, yr, url)
+            if key not in seen:
+                seen.add(key)
+                ordered_refs.append(key)
+            if url:
                 pool_map[key] = (title or inst, url)
 
     ref_map = {pair: i + 1 for i, pair in enumerate(ordered_refs)}
@@ -258,8 +260,9 @@ def convert_citations(report_path: str, datapool_path: str, output_path: str = N
 
     # Build reference section
     entry_lines = []
-    for (inst, yr), num in sorted(ref_map.items(), key=lambda x: x[1]):
-        title, url = pool_map.get((inst, yr), (inst, ''))
+    for key, num in sorted(ref_map.items(), key=lambda x: x[1]):
+        inst, yr, url = key
+        title, _ = pool_map.get(key, (inst, ''))
         label = title if title == inst else f"{title} · {inst}"
         label = label + (f" · {yr}" if yr else "")
         anchor = f'<a id="ref{num}"></a>'
