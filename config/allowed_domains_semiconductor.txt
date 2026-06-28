@@ -1,0 +1,62 @@
+# 半导体/车规/显示/LED 研发调研建议白名单
+# 默认外部 SearXNG 端点仍保留；本文件用于 Hermes 侧做联网抓取过滤或优先级控制。
+
+# 标准/认证
+aecouncil.com
+jedec.org
+iso.org
+sae.org
+iec.ch
+
+# 半导体厂商
+ti.com
+analog.com
+monolithicpower.com
+infineon.com
+st.com
+nxp.com
+onsemi.com
+renesas.com
+microchip.com
+melexis.com
+rohm.com
+diodes.com
+
+# LED / 光电 / 显示
+ams-osram.com
+lumileds.com
+cree-led.com
+nichia.com
+auo.com
+boe.com.cn
+tianma.com
+
+# 学术/专利/论文
+ieee.org
+nature.com
+sciencedirect.com
+springer.com
+semanticscholar.org
+arxiv.org
+patents.google.com
+worldwide.espacenet.com
+
+# 数据/新闻/产业
+reuters.com
+semiengineering.com
+semiconductor-today.com
+eetimes.com
+eetasia.com
+digitimes.com
+trendforce.com
+omdia.com
+counterpointresearch.com
+idc.com
+
+# 中国公开信息
+miit.gov.cn
+samr.gov.cn
+cnipa.gov.cn
+std.samr.gov.cn
+eastmoney.com
+36kr.com
