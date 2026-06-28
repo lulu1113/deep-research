@@ -12,6 +12,10 @@
 - Codex CLI；
 - 不使用 WSL 路径。
 
+本 fork 新增了 context-first 工作流，推荐先用 `/research-contract` 锁定调研范围、证据标准和上下文计划，再执行 `/research-public` 或 `/research-local`。
+
+---
+
 ## 1. 设计原则
 
 建议使用一份统一的 Skill 仓库，然后通过 Windows 目录联接挂载到 Hermes 和 Codex：
@@ -28,6 +32,8 @@ C:\Users\<用户名>\.codex\skills\deep-research   -> 指向 .agent-skills\deep-
 - Hermes CLI 和 Codex CLI 共用同一份 Skill；
 - 后续 `git pull origin main` 一次即可更新；
 - 不会因为两个目录内容不一致导致行为差异。
+
+---
 
 ## 2. 安装到公共 Skill 目录
 
@@ -52,6 +58,8 @@ $Repo = "$SkillBase\deep-research"
 cd $Repo
 git pull origin main
 ```
+
+---
 
 ## 3. 安装 Python 依赖
 
@@ -86,6 +94,8 @@ https://search.h33.top
 & "$Repo\.venv\Scripts\python.exe" -m playwright install chromium
 ```
 
+---
+
 ## 4. 安装到 Hermes CLI
 
 ### 4.1 创建 Hermes skills 目录
@@ -118,10 +128,13 @@ cmd /c mklink /J "%USERPROFILE%\.hermes\skills\deep-research" "%USERPROFILE%\.ag
 $HermesCommands = "$env:USERPROFILE\.hermes\commands"
 New-Item -ItemType Directory -Force $HermesCommands | Out-Null
 
+Copy-Item "$Repo\command\research-contract.md" "$HermesCommands\research-contract.md" -Force
 Copy-Item "$Repo\command\research-public.md" "$HermesCommands\research-public.md" -Force
 Copy-Item "$Repo\command\research-local.md" "$HermesCommands\research-local.md" -Force
 Copy-Item "$Repo\command\update.md" "$HermesCommands\research-update.md" -Force
 ```
+
+---
 
 ## 5. 给 Hermes 配置 Scrapling MCP
 
@@ -152,14 +165,9 @@ C:\Users\<用户名>\.hermes\config.json
 $env:USERNAME
 ```
 
-示例路径可能是：
-
-```text
-C:\Users\lulu1\.agent-skills\deep-research\.venv\Scripts\python.exe
-C:\Users\lulu1\.agent-skills\deep-research\scrapling-mcp-server.py
-```
-
 注意：Scrapling 只建议给 `/research-public` 使用。内部资料、客户资料、销售反馈和未公开研发资料应使用 `/research-local`。
+
+---
 
 ## 6. 安装到 Codex CLI
 
@@ -193,12 +201,21 @@ cmd /c mklink /J "%USERPROFILE%\.codex\skills\deep-research" "%USERPROFILE%\.age
 $CodexCommands = "$env:USERPROFILE\.codex\commands"
 New-Item -ItemType Directory -Force $CodexCommands | Out-Null
 
+Copy-Item "$Repo\command\research-contract.md" "$CodexCommands\research-contract.md" -Force
 Copy-Item "$Repo\command\research-public.md" "$CodexCommands\research-public.md" -Force
 Copy-Item "$Repo\command\research-local.md" "$CodexCommands\research-local.md" -Force
 Copy-Item "$Repo\command\update.md" "$CodexCommands\research-update.md" -Force
 ```
 
 如果当前 Codex CLI 版本不识别 slash command，可以显式要求 Codex 读取命令文件：
+
+```text
+请读取 C:\Users\<用户名>\.agent-skills\deep-research\command\research-contract.md，
+按其中规则执行：
+为 Local Dimming 分区背光驱动芯片竞争格局调研生成 research contract
+```
+
+公开资料模式：
 
 ```text
 请读取 C:\Users\<用户名>\.agent-skills\deep-research\command\research-public.md，
@@ -213,6 +230,8 @@ Local Dimming 分区背光驱动芯片竞争格局 -quick
 按其中规则执行：
 D:\资料库\LocalDimming 生成竞品对比报告 -quick
 ```
+
+---
 
 ## 7. 给 Codex CLI 配置 Scrapling MCP
 
@@ -234,12 +253,20 @@ args = [
 
 将 `<用户名>` 替换为真实 Windows 用户名。
 
+---
+
 ## 8. 测试 Hermes CLI
 
 启动 Hermes CLI：
 
 ```powershell
 hermes
+```
+
+先测试 contract：
+
+```text
+/research-contract Local Dimming 分区背光驱动芯片竞争格局，面向产品规划会议，要求区分事实、推断和数据缺口
 ```
 
 测试公开资料联网调研：
@@ -254,12 +281,20 @@ hermes
 /research-local D:\资料库\LocalDimming 生成 Local Dimming 竞品对比报告 -quick
 ```
 
+---
+
 ## 9. 测试 Codex CLI
 
 启动 Codex CLI：
 
 ```powershell
 codex
+```
+
+先测试 contract：
+
+```text
+/research-contract 车载矩阵式大灯 LED Driver 技术路线，要求输出可验证的公开来源和 data gap
 ```
 
 测试公开资料联网调研：
@@ -275,9 +310,17 @@ codex
 调研：车载矩阵式大灯 LED Driver 技术路线 -standard
 ```
 
+---
+
 ## 10. 日常使用建议
 
-### 10.1 公开资料调研
+### 10.1 复杂任务先立约
+
+```text
+/research-contract Local Dimming 分区背光驱动芯片竞争格局，输出给产品规划会议使用
+```
+
+### 10.2 公开资料调研
 
 适合行业趋势、竞品官网、公开政策、公开标准、公开专利、公开技术路线。
 
@@ -287,7 +330,7 @@ codex
 /research-public Automotive DCDC controller market landscape -deep
 ```
 
-### 10.2 本地资料调研
+### 10.3 本地资料调研
 
 适合内部资料、客户反馈、销售记录、本地 PDF/DOCX/TXT/MD 文件夹、未公开资料。
 
@@ -296,7 +339,7 @@ codex
 /research-local D:\资料库\LocalDimming 生成竞品对比报告 -quick
 ```
 
-### 10.3 敏感资料边界
+### 10.4 敏感资料边界
 
 以下内容不要进入 `/research-public`：
 
@@ -316,7 +359,31 @@ codex
 config/redaction_rules.md
 ```
 
-## 11. 更新方式
+---
+
+## 11. Context-first 使用原则
+
+详细规则见：
+
+```text
+config/context_policy.md
+docs/CONTEXT_FIRST_RESEARCH_WORKFLOW.md
+templates/research_contract.md
+templates/idea_card.md
+templates/baseline_card.md
+```
+
+关键点：
+
+- 主 session 只保留调度信息和 artifact 摘要；
+- 不把搜索日志、安装日志、长 PDF、训练日志塞进主上下文；
+- 每个 idea 独立评审；
+- 每个关键 claim 必须能追溯到 evidence；
+- contract 开始执行后不能静默修改。
+
+---
+
+## 12. 更新方式
 
 更新你的 fork：
 
@@ -337,15 +404,17 @@ git diff --stat main..upstream/main
 git log --oneline main..upstream/main
 ```
 
-确认不会覆盖 Hermes 适配、安全规则、半导体源清单和脱敏配置后，再人工合并。
+确认不会覆盖 Hermes 适配、安全规则、context policy、半导体源清单和脱敏配置后，再人工合并。
 
-## 12. 常见问题
+---
 
-### 12.1 `mklink` 失败
+## 13. 常见问题
+
+### 13.1 `mklink` 失败
 
 优先使用 PowerShell 管理员权限打开，或启用 Windows 开发者模式。也可以不用链接，直接复制目录到 `.hermes\skills` 和 `.codex\skills`，但后续需要分别更新。
 
-### 12.2 `py -3` 找不到
+### 13.2 `py -3` 找不到
 
 检查 Python 是否安装，并确认加入 PATH：
 
@@ -360,7 +429,7 @@ py --version
 python -m venv .venv
 ```
 
-### 12.3 pip 下载失败
+### 13.3 pip 下载失败
 
 如果需要走代理，先在当前 PowerShell 设置代理：
 
@@ -371,22 +440,19 @@ $env:HTTPS_PROXY="http://127.0.0.1:7890"
 
 然后重新执行 pip 安装。
 
-### 12.4 Codex 不识别 slash command
+### 13.4 Codex 不识别 slash command
 
 使用显式命令文件方式，让 Codex 读取：
 
 ```text
+C:\Users\<用户名>\.agent-skills\deep-research\command\research-contract.md
 C:\Users\<用户名>\.agent-skills\deep-research\command\research-public.md
-```
-
-或：
-
-```text
 C:\Users\<用户名>\.agent-skills\deep-research\command\research-local.md
 ```
 
-### 12.5 公开模式与本地模式怎么选
+### 13.5 公开模式与本地模式怎么选
 
+- 先定义范围和证据标准：`/research-contract`。
 - 公开资料、行业趋势、竞品官网：`/research-public`。
 - 内部资料、客户反馈、销售记录、本地文件夹：`/research-local`。
 - 不确定是否敏感时，先用 `/research-local`。
