@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "description": "Semiconductor-focused source list for Hermes/deep-research. Use as a supplement or replacement for sources.json in public research mode.",
+  "sources": [
+    {
+      "id": "ti",
+      "name": "Texas Instruments",
+      "type": "vendor",
+      "url_template": "https://www.ti.com/search/en-us/docs/universalsearch.tsp?searchTerm={query}",
+      "lang": ["en"],
+      "health_url": "https://www.ti.com",
+      "priority": 1
+    },
+    {
+      "id": "analog_devices",
+      "name": "Analog Devices",
+      "type": "vendor",
+      "url_template": "https://www.analog.com/en/search.html?q={query}",
+      "lang": ["en"],
+      "health_url": "https://www.analog.com",
+      "priority": 1
+    },
+    {
+      "id": "mps",
+      "name": "Monolithic Power Systems",
+      "type": "vendor",
+      "url_template": "https://www.monolithicpower.com/en/search?q={query}",
+      "lang": ["en"],
+      "health_url": "https://www.monolithicpower.com",
+      "priority": 1
+    },
+    {
+      "id": "infineon",
+      "name": "Infineon",
+      "type": "vendor",
+      "url_template": "https://www.infineon.com/cms/en/search.html#!term={query}",
+      "lang": ["en"],
+      "health_url": "https://www.infineon.com",
+      "priority": 1
+    },
+    {
+      "id": "st",
+      "name": "STMicroelectronics",
+      "type": "vendor",
+      "url_template": "https://www.st.com/content/st_com/en/search.html#q={query}",
+      "lang": ["en"],
+      "health_url": "https://www.st.com",
+      "priority": 1
+    },
+    {
+      "id": "nxp",
+      "name": "NXP",
+      "type": "vendor",
+      "url_template": "https://www.nxp.com/search?keyword={query}",
+      "lang": ["en"],
+      "health_url": "https://www.nxp.com",
+      "priority": 1
+    },
+    {
+      "id": "onsemi",
+      "name": "onsemi",
+      "type": "vendor",
+      "url_template": "https://www.onsemi.com/search?q={query}",
+      "lang": ["en"],
+      "health_url": "https://www.onsemi.com",
+      "priority": 1
+    },
+    {
+      "id": "renesas",
+      "name": "Renesas",
+      "type": "vendor",
+      "url_template": "https://www.renesas.com/en/search?keywords={query}",
+      "lang": ["en"],
+      "health_url": "https://www.renesas.com",
+      "priority": 1
+    },
+    {
+      "id": "ams_osram",
+      "name": "ams OSRAM",
+      "type": "vendor",
+      "url_template": "https://ams-osram.com/search?query={query}",
+      "lang": ["en"],
+      "health_url": "https://ams-osram.com",
+      "priority": 1
+    },
+    {
+      "id": "semiengineering",
+      "name": "Semiconductor Engineering",
+      "type": "industry_media",
+      "url_template": "https://semiengineering.com/?s={query}",
+      "lang": ["en"],
+      "health_url": "https://semiengineering.com",
+      "priority": 2
+    },
+    {
+      "id": "eetimes",
+      "name": "EE Times",
+      "type": "industry_media",
+      "url_template": "https://www.eetimes.com/?s={query}",
+      "lang": ["en"],
+      "health_url": "https://www.eetimes.com",
+      "priority": 2
+    },
+    {
+      "id": "patents_google",
+      "name": "Google Patents",
+      "type": "patent",
+      "url_template": "https://patents.google.com/?q={query}",
+      "lang": ["en"],
+      "health_url": "https://patents.google.com",
+      "priority": 2
+    },
+    {
+      "id": "cnipa",
+      "name": "国家知识产权局",
+      "type": "patent",
+      "url_template": "https://www.cnipa.gov.cn/search.html?keyword={query}",
+      "lang": ["zh"],
+      "health_url": "https://www.cnipa.gov.cn",
+      "priority": 2
+    },
+    {
+      "id": "miit",
+      "name": "工业和信息化部",
+      "type": "government",
+      "url_template": "https://www.miit.gov.cn/search-front-server/search/info?websiteid=110000000000000&searchword={query}",
+      "lang": ["zh"],
+      "health_url": "https://www.miit.gov.cn",
+      "priority": 2
+    }
+  ]
+}
